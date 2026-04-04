@@ -1,53 +1,57 @@
-# Lodge Build Mode
+# Lodge BUILD
 
-This folder contains an isolated backend-first implementation of the Build Mode "Routine Matchmaker" engine from the Lodge spec.
+This folder now contains a `BUILD`-only app slice for Lodge.
 
 ## Included
 
-- Dual-vector distribution engine:
-  - `symmetry` matches on routine alignment and temporal overlap
-  - `proximity` matches on users within a 0.5-mile radius
-- OpenAI-backed low-stakes invitation synthesis
-- Entropy helper for prioritizing users whose routines are slipping
-- UUID-based anchor link generator
-- SQL schema starter for `User_Routines`, `Active_Intentions`, and `Matches`
-- In-memory repository and tests for local verification
-
-## Structure
-
-- `src/routineMatchmaker.js`
-  Core engine that finds matches, deduplicates users, prioritizes recipients, and generates invitation copy.
-- `src/invitationSynthesizer.js`
-  OpenAI Responses API client plus a deterministic template fallback for local testing.
-- `src/entropy.js`
-  Rolling-window entropy detector for "Recommended for your routine" prioritization.
-- `src/anchorLink.js`
-  UUID link helper for single-purpose share pages.
-- `sql/schema.sql`
-  Postgres/PostGIS-oriented starter schema.
-
-## Environment
-
-To use the OpenAI synthesizer, set:
-
-```powershell
-$env:OPENAI_API_KEY="your_api_key"
-$env:OPENAI_MODEL="gpt-4.1-mini"
-```
-
-If no API key is present, the example uses a template synthesizer so the matchmaker can still be exercised locally.
+- Backend scoring for:
+  - spatiotemporal anchor matching
+  - invitation synthesis
+  - routine entropy detection
+  - compatibility friction scoring
+  - silent bridge notifications
+- A lightweight Node server for local demo use
+- A frontend with:
+  - a live landing page
+  - an animated globe-style hero
+  - an interactive map for nearby ritual posts
+  - a composer for new BUILD posts
+  - blueprint and match detail panels
 
 ## Run
+
+```powershell
+node .\build-mode\src\server.js
+```
+
+Or:
+
+```powershell
+npm --prefix .\build-mode start
+```
+
+Then open:
+
+```text
+http://localhost:3030
+```
+
+## Other Commands
 
 ```powershell
 node .\build-mode\src\example.js
 node .\build-mode\tests\routineMatchmaker.test.js
 ```
 
-## Notes
+## Structure
 
-- No UI is generated in this module.
-- Everything is kept in `build-mode/` so it can be integrated into a larger React or Next.js app later.
-- The schema adds `routine_tags` and `activity_history` support because the Build Mode symmetry logic depends on more than a single routine type.
-
-
+- `src/server.js`
+  Static file server plus JSON and SSE endpoints for the demo app.
+- `src/demoBuildApp.js`
+  In-memory BUILD app state, seeded posts, live updates, and plan generation.
+- `ui/`
+  Frontend landing page and BUILD workspace.
+- `src/buildModeService.js`
+  Blueprint, match, share-link, and notification orchestration.
+- `sql/schema.sql`
+  Starter schema for a fuller persistent backend.

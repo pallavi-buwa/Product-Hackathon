@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Routine Matchmaker engine for Lodge Build Mode.",
   "scripts": {
+    "start": "node ./src/server.js",
     "demo": "node ./src/example.js",
     "test": "node ./tests/routineMatchmaker.test.js"
   }

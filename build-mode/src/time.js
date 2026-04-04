@@ -20,6 +20,11 @@ function overlapMinutes(a, b) {
   return Math.max(0, Math.min(a.end, b.end) - Math.max(a.start, b.start));
 }
 
+function circularMinuteDelta(a, b) {
+  const raw = Math.abs(a - b) % 1440;
+  return Math.min(raw, 1440 - raw);
+}
+
 export function timeStringToMinutes(value) {
   const [hours, minutes] = value.split(":").map(Number);
   return (hours * 60 + minutes) % 1440;
@@ -65,4 +70,26 @@ export function computeTemporalMatchScore(date, timeWindow) {
 
   const baseDuration = Math.max(60, routineWindow.end - routineWindow.start);
   return Number((bestOverlap / baseDuration).toFixed(2));
+}
+
+export function computeStartDeltaMinutes(date, timeWindow) {
+  if (!timeWindow?.start) {
+    return null;
+  }
+
+  const intentionMinutes = date.getHours() * 60 + date.getMinutes();
+  const routineStartMinutes = timeStringToMinutes(timeWindow.start);
+  return circularMinuteDelta(intentionMinutes, routineStartMinutes);
+}
+
+export function computeCadenceAlignmentScore({
+  intentionCadencePerWeek = 1,
+  routineCadencePerWeek = 1
+}) {
+  const intentionCadence = Math.max(1, Number(intentionCadencePerWeek) || 1);
+  const routineCadence = Math.max(1, Number(routineCadencePerWeek) || 1);
+  const gap = Math.abs(intentionCadence - routineCadence);
+  const score = Math.max(0, 1 - gap / Math.max(intentionCadence, routineCadence));
+
+  return Number(score.toFixed(2));
 }

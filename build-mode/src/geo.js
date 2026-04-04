@@ -21,6 +21,28 @@ export function haversineMiles(a, b) {
   return 2 * EARTH_RADIUS_MILES * Math.atan2(Math.sqrt(inner), Math.sqrt(1 - inner));
 }
 
+function isValidPoint(point) {
+  return Number.isFinite(point?.lat) && Number.isFinite(point?.lng);
+}
+
+function dedupePoints(points) {
+  const seen = new Set();
+
+  return points.filter((point) => {
+    if (!isValidPoint(point)) {
+      return false;
+    }
+
+    const key = `${point.lat}:${point.lng}`;
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
 export function getIntentionAnchorPoints(activeIntention) {
   const anchors = [];
 
@@ -39,7 +61,28 @@ export function getIntentionAnchorPoints(activeIntention) {
     }
   }
 
-  return anchors;
+  return dedupePoints(anchors);
+}
+
+export function getRoutineAnchorPoints(routine) {
+  const anchors = [];
+
+  if (routine.locationCoords) {
+    anchors.push(routine.locationCoords);
+  }
+
+  if (Array.isArray(routine.anchorPoints)) {
+    anchors.push(...routine.anchorPoints);
+  }
+
+  if (Array.isArray(routine.routePolygon) && routine.routePolygon.length) {
+    anchors.push(routine.routePolygon[0]);
+    if (routine.routePolygon.length > 1) {
+      anchors.push(routine.routePolygon[routine.routePolygon.length - 1]);
+    }
+  }
+
+  return dedupePoints(anchors);
 }
 
 export function nearestDistanceMiles(origin, targets) {
@@ -51,4 +94,36 @@ export function nearestDistanceMiles(origin, targets) {
     const miles = haversineMiles(origin, target);
     return Math.min(closest, miles);
   }, Number.POSITIVE_INFINITY);
+}
+
+export function pointSetMinDistanceMiles(origins, targets) {
+  if (!origins.length || !targets.length) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  return origins.reduce((closest, origin) => {
+    return Math.min(closest, nearestDistanceMiles(origin, targets));
+  }, Number.POSITIVE_INFINITY);
+}
+
+export function computeSpatialAnchorScore({
+  intentionAnchors,
+  routineAnchors,
+  radiusMiles = 0.75
+}) {
+  const distanceMiles = pointSetMinDistanceMiles(intentionAnchors, routineAnchors);
+
+  if (!Number.isFinite(distanceMiles)) {
+    return {
+      distanceMiles: null,
+      spatialScore: 0
+    };
+  }
+
+  const spatialScore = Math.max(0, 1 - distanceMiles / Math.max(radiusMiles, 0.01));
+
+  return {
+    distanceMiles: Number(distanceMiles.toFixed(3)),
+    spatialScore: Number(spatialScore.toFixed(2))
+  };
 }

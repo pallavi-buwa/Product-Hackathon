@@ -13,20 +13,85 @@ function extractOutputText(payload) {
   return text || null;
 }
 
+function collectAudienceTags({ recipientProfile, recipientRoutine, activeIntention }) {
+  return [
+    ...(recipientProfile?.interests || []),
+    ...(recipientRoutine?.routineTags || [])
+  ]
+    .map((value) => String(value).toLowerCase())
+    .filter(Boolean);
+}
+
+function inferViewerLens({ recipientProfile, recipientRoutine, activeIntention, anchorRelationship }) {
+  const tags = collectAudienceTags({ recipientProfile, recipientRoutine, activeIntention });
+
+  if (tags.some((tag) => ["gym", "workout", "lift", "fitness"].includes(tag))) {
+    return {
+      id: "gym-goer",
+      promptAngle: "A routine neighbor is heading your way."
+    };
+  }
+
+  if (tags.some((tag) => ["coffee", "cafe", "espresso", "latte"].includes(tag))) {
+    return {
+      id: "coffee-lover",
+      promptAngle: "Perfect timing for a post-routine coffee."
+    };
+  }
+
+  if (tags.some((tag) => ["errands", "target", "groceries", "shopping"].includes(tag))) {
+    return {
+      id: "errand-buddy",
+      promptAngle: "You're already headed out, so this stays easy."
+    };
+  }
+
+  if (anchorRelationship === "adjacent-anchor") {
+    return {
+      id: "adjacent-anchor",
+      promptAngle: "Your routines already brush past each other."
+    };
+  }
+
+  return {
+    id: "routine-neighbor",
+    promptAngle: "A routine neighbor is heading your way."
+  };
+}
+
 export function createTemplateInvitationSynthesizer() {
   return {
     async generateInvitation({
       posterProfile,
       recipientProfile,
+      recipientRoutine,
       activeIntention,
-      primaryMatchType
+      primaryMatchType,
+      viewerLens,
+      anchorRelationship
     }) {
       const posterName = posterProfile.firstName || "Someone";
       const recipientName = recipientProfile.firstName || "there";
       const label = activeIntention.label || activeIntention.type.replaceAll("_", " ");
       const spot = activeIntention.localSpotName || "a nearby spot";
+      const lens =
+        viewerLens ||
+        inferViewerLens({
+          recipientProfile,
+          recipientRoutine,
+          activeIntention,
+          anchorRelationship
+        });
 
-      if (primaryMatchType === "symmetry") {
+      if (lens.id === "coffee-lover") {
+        return `Perfect timing for a post-${label} coffee: ${posterName} will be near ${spot}. Want to join if you're already headed out, ${recipientName}?`;
+      }
+
+      if (lens.id === "gym-goer") {
+        return `A routine neighbor is heading your way: ${posterName} is doing ${label} nearby. Want to make this one shared?`;
+      }
+
+      if (primaryMatchType === "anchor") {
         return `Since you're usually out around this time, ${posterName} is heading out for ${label}. Want to join?`;
       }
 
@@ -48,11 +113,15 @@ export function createOpenAIInvitationSynthesizer({
     async generateInvitation({
       posterProfile,
       recipientProfile,
+      recipientRoutine,
       activeIntention,
       primaryMatchType,
       matchSources,
       temporalMatchScore,
-      proximityMiles
+      proximityMiles,
+      compatibilityScore,
+      viewerLens,
+      anchorRelationship
     }) {
       const systemPrompt =
         "You write one-sentence, low-stakes social invitations for a routine-sharing app. " +
@@ -61,18 +130,28 @@ export function createOpenAIInvitationSynthesizer({
       const userPrompt = {
         poster_profile: posterProfile,
         recipient_profile: recipientProfile,
+        recipient_routine: recipientRoutine,
         activity_type: activeIntention.type,
         activity_label: activeIntention.label || activeIntention.type.replaceAll("_", " "),
         local_spot: activeIntention.localSpotName || null,
         start_time: activeIntention.startTime,
         match_type: primaryMatchType,
+        viewer_lens:
+          viewerLens ||
+          inferViewerLens({
+            recipientProfile,
+            recipientRoutine,
+            activeIntention,
+            anchorRelationship
+          }),
         match_sources: matchSources,
         temporal_match_score: temporalMatchScore,
         proximity_miles: proximityMiles,
+        compatibility_score: compatibilityScore,
         style_rules: [
           "Keep it under 28 words.",
           "Make it sound like a practical invitation.",
-          "If symmetry match, focus on shared routine timing.",
+          "If anchor match, focus on shared routine timing and convenience.",
           "If proximity match, focus on convenience and location.",
           "Use the poster's first name if available."
         ]
@@ -109,3 +188,5 @@ export function createOpenAIInvitationSynthesizer({
     }
   };
 }
+
+export { inferViewerLens };
