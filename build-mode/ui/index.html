@@ -1,95 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lodge BUILD</title>
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body>
-    <div class="page-shell">
-      <header class="topbar">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lodge</title>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand-home" href="/" aria-label="Go to the Lodge home page">
         <div class="brand-lockup">
           <div class="brand-mark">L</div>
           <div>
-            <p class="eyebrow">Lodge</p>
-            <h1>BUILD</h1>
+            <h1>Lodge</h1>
           </div>
         </div>
-        <nav class="topbar-links">
-          <a href="/">Home</a>
-          <a href="/build">Open Workspace</a>
-        </nav>
-      </header>
-
-      <main>
-        <section class="hero landing-hero">
-          <div class="hero-copy reveal">
-            <p class="eyebrow">Build Mode Only</p>
-            <h2 id="hero-title">Turn familiar solo routines into something shared.</h2>
-            <p class="hero-text" id="hero-text">
-              Lodge helps you post the quiet things you already do.
-            </p>
-            <div class="hero-actions">
-              <a class="primary-button" href="/build">Open the live map</a>
-              <button class="ghost-button" id="focus-featured" type="button">
-                Jump to a live ritual
-              </button>
-            </div>
-            <div class="hero-metrics" id="hero-metrics"></div>
-          </div>
-
-          <div class="hero-visual reveal">
-            <div class="globe-card">
-              <div class="globe-card-header">
-                <p class="eyebrow">Neighborhood Pulse</p>
-                <span class="status-dot"><span></span> Live</span>
-              </div>
-              <canvas id="globe-canvas" aria-label="Animated live globe"></canvas>
-              <div class="globe-overlay">
-                <div class="orbital-note">
-                  Quiet signals travel better than loud broadcasts.
-                </div>
-                <div class="live-panel">
-                  <h3>Right now</h3>
-                  <ul id="live-updates"></ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="feature-grid reveal">
-          <article class="card feature-card">
-            <p class="eyebrow">1. Post</p>
-            <h4>Share the routine you already keep.</h4>
-            <p>
-              Morning walks, market stops, workouts, studio loops. BUILD starts with
-              ordinary rituals, not awkward networking events.
-            </p>
-          </article>
-
-          <article class="card feature-card">
-            <p class="eyebrow">2. Match</p>
-            <h4>Rank nearby routine neighbors.</h4>
-            <p>
-              The backend scores route overlap, timing, cadence, entropy, and social
-              friction so the matches feel sustainable.
-            </p>
-          </article>
-
-          <article class="card feature-card">
-            <p class="eyebrow">3. Nudge</p>
-            <h4>Make the invite feel easy.</h4>
-            <p>
-              Invitation copy and silent bridge nudges keep it logistical and low-pressure
-              instead of making it feel like friend-dating.
-            </p>
-          </article>
-        </section>
-      </main>
+      </a>
+      <nav class="topbar-links">
+        <a href="/">Home</a>
+        <a href="/build">Workspace</a>
+      </nav>
     </div>
+  </header>
 
-    <script type="module" src="/landing.js"></script>
-  </body>
+  <div class="page-shell">
+    <main>
+      <section class="hero landing-hero">
+        <div class="hero-copy reveal">
+          <h2 id="hero-title">Turn familiar solo routines into something shared.</h2>
+          <p class="hero-text" id="hero-text">
+            Lodge helps you post the quiet things you already do.
+          </p>
+          <div class="hero-actions">
+            <a class="primary-button" href="/build">Open the live map</a>
+            <button class="ghost-button" id="focus-featured" type="button">
+              Jump to a live ritual
+            </button>
+          </div>
+          <div class="hero-metrics" id="hero-metrics"></div>
+        </div>
+
+        <div class="hero-visual reveal">
+          <div class="globe-card">
+            <div class="globe-card-header">
+              <div>
+                <p class="eyebrow">Live routine world</p>
+                <h3>Explore locations near you!</h3>
+              </div>
+            </div>
+            <div id="globe-map" aria-label="Interactive earth globe"></div>
+            <p class="globe-instruction">Click and drag to spin. Scroll to zoom.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="feature-grid reveal">
+        <article class="card feature-card">
+          <p class="eyebrow">1. Post</p>
+          <h4>Share the routine you already keep.</h4>
+          <p>
+            Morning walks, market stops, workouts, studio loops. BUILD starts with
+            ordinary rituals, not awkward networking events.
+          </p>
+        </article>
+
+        <article class="card feature-card">
+          <p class="eyebrow">2. Match</p>
+          <h4>Rank nearby routine neighbors.</h4>
+          <p>
+            The backend scores route overlap, timing, cadence, entropy, and social
+            friction so the matches feel sustainable.
+          </p>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+  <script>window.__MAPBOX_TOKEN = "";</script>
+  <script type="module" src="/landing.js"></script>
+</body>
+
 </html>

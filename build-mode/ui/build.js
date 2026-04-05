@@ -1,3 +1,5 @@
+const MAPBOX_TOKEN = window.__MAPBOX_TOKEN || "";
+
 const state = {
   bootstrap: null,
   viewport: null,
@@ -7,7 +9,8 @@ const state = {
   mapPlaces: [],
   routineTypeOptions: [],
   composerDefaults: {},
-  markerScreenPositions: [],
+  map: null,
+  markers: [],
   pendingViewportFetch: null
 };
 
@@ -20,12 +23,10 @@ const elements = {
   postCountLabel: document.querySelector("#post-count-label"),
   composerForm: document.querySelector("#composer-form"),
   routineTypeSelect: document.querySelector("#routine-type-select"),
-  mapCanvas: document.querySelector("#map-canvas"),
+  mapElement: document.querySelector("#map"),
   zoomIn: document.querySelector("#zoom-in"),
   zoomOut: document.querySelector("#zoom-out")
 };
-
-const mapContext = elements.mapCanvas.getContext("2d");
 
 async function requestJson(url, options = {}) {
   const response = await fetch(url, options);
@@ -60,23 +61,6 @@ function toDateTimeLocalValue(date) {
   const hours = String(date.getHours()).padStart(2, "0");
   const minutes = String(date.getMinutes()).padStart(2, "0");
   return `${year}-${month}-${day}T${hours}:${minutes}`;
-}
-
-function currentSpans() {
-  return {
-    spanLat: state.bootstrap.viewport.spanLat / state.viewport.zoom,
-    spanLng: state.bootstrap.viewport.spanLng / state.viewport.zoom
-  };
-}
-
-function currentBounds() {
-  const { spanLat, spanLng } = currentSpans();
-  return {
-    minLat: state.viewport.center.lat - spanLat / 2,
-    maxLat: state.viewport.center.lat + spanLat / 2,
-    minLng: state.viewport.center.lng - spanLng / 2,
-    maxLng: state.viewport.center.lng + spanLng / 2
-  };
 }
 
 function nearestPlaceLabel(center) {
@@ -189,9 +173,9 @@ function detailMarkup(detail) {
       </div>
 
       <div class="detail-block">
-        <p class="eyebrow">Silent bridge nudges</p>
+        <p class="eyebrow">Nudges for you</p>
         <ul class="notification-list">
-          ${notificationMarkup || "<li>No silent bridge nudges scheduled yet.</li>"}
+          ${notificationMarkup || "<li>No personalized nudges are scheduled yet.</li>"}
         </ul>
       </div>
     </div>
@@ -202,7 +186,7 @@ function renderDetail() {
   if (!state.selectedPostId || !state.detailCache.has(state.selectedPostId)) {
     elements.detailTitle.textContent = "Select a post to inspect the ritual plan";
     elements.detailBody.innerHTML =
-      '<p class="empty-state">The selected post will show its generated ritual blueprint, top routine matches, and silent bridge nudges here.</p>';
+      '<p class="empty-state">The selected post will show its generated ritual blueprint, top routine matches, and nudges meant for you here.</p>';
     return;
   }
 
@@ -211,134 +195,79 @@ function renderDetail() {
   elements.detailBody.innerHTML = detailMarkup(detail);
 }
 
-function resizeCanvas(canvas, context, width, height) {
-  const ratio = window.devicePixelRatio || 1;
-  canvas.width = Math.floor(width * ratio);
-  canvas.height = Math.floor(height * ratio);
-  context.setTransform(ratio, 0, 0, ratio, 0, 0);
-}
-
-function drawMapBackground(width, height) {
-  const gradient = mapContext.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, "#f8fbf9");
-  gradient.addColorStop(1, "#edf2ee");
-  mapContext.fillStyle = gradient;
-  mapContext.fillRect(0, 0, width, height);
-
-  mapContext.save();
-  mapContext.strokeStyle = "rgba(54, 104, 89, 0.08)";
-  mapContext.lineWidth = 1;
-  for (let x = 0; x < width; x += 54) {
-    mapContext.beginPath();
-    mapContext.moveTo(x, 0);
-    mapContext.lineTo(x, height);
-    mapContext.stroke();
+function applyViewportFromMap() {
+  if (!state.map) {
+    return;
   }
-  for (let y = 0; y < height; y += 54) {
-    mapContext.beginPath();
-    mapContext.moveTo(0, y);
-    mapContext.lineTo(width, y);
-    mapContext.stroke();
-  }
-  mapContext.restore();
-}
 
-function projectPoint(point, width, height) {
-  const { spanLat, spanLng } = currentSpans();
-
-  return {
-    x: ((point.lng - state.viewport.center.lng) / spanLng) * width + width / 2,
-    y: ((state.viewport.center.lat - point.lat) / spanLat) * height + height / 2
+  const center = state.map.getCenter();
+  state.viewport.center = {
+    lat: center.lat,
+    lng: center.lng
   };
+  state.viewport.zoom = state.map.getZoom();
 }
 
-function drawMap() {
-  const width = elements.mapCanvas.clientWidth;
-  const height = elements.mapCanvas.clientHeight;
-  resizeCanvas(elements.mapCanvas, mapContext, width, height);
-  drawMapBackground(width, height);
-
-  mapContext.save();
-  mapContext.strokeStyle = "rgba(95, 134, 169, 0.18)";
-  mapContext.lineWidth = 2;
-  for (let index = 0; index < state.mapPlaces.length - 1; index += 1) {
-    const start = projectPoint(state.mapPlaces[index], width, height);
-    const end = projectPoint(state.mapPlaces[index + 1], width, height);
-    mapContext.beginPath();
-    mapContext.moveTo(start.x, start.y);
-    mapContext.bezierCurveTo(
-      start.x + 55,
-      start.y - 30,
-      end.x - 40,
-      end.y + 30,
-      end.x,
-      end.y
-    );
-    mapContext.stroke();
+function clearMarkers() {
+  for (const marker of state.markers) {
+    marker.remove();
   }
-  mapContext.restore();
+  state.markers = [];
+}
 
-  for (const place of state.mapPlaces) {
-    const projected = projectPoint(place, width, height);
-    if (
-      projected.x < -80 ||
-      projected.x > width + 80 ||
-      projected.y < -40 ||
-      projected.y > height + 40
-    ) {
-      continue;
-    }
-
-    mapContext.fillStyle = "rgba(28, 57, 47, 0.6)";
-    mapContext.font = '12px "Manrope"';
-    mapContext.fillText(place.label, projected.x + 8, projected.y - 8);
-  }
-
-  state.markerScreenPositions = state.posts.map((post, index) => {
-    const projected = projectPoint(post.startLocation, width, height);
-    const radius = post.creatorId === state.bootstrap.viewer.id ? 10 : 8;
-    const pulse = 6 + Math.sin(performance.now() / 700 + index) * 2;
-
-    mapContext.save();
-    mapContext.fillStyle =
-      post.creatorId === state.bootstrap.viewer.id
-        ? "rgba(95, 134, 169, 0.18)"
-        : "rgba(47, 125, 103, 0.16)";
-    mapContext.beginPath();
-    mapContext.arc(projected.x, projected.y, radius + pulse, 0, Math.PI * 2);
-    mapContext.fill();
-
-    mapContext.fillStyle =
-      post.creatorId === state.bootstrap.viewer.id ? "#5f86a9" : "#2f7d67";
-    mapContext.beginPath();
-    mapContext.arc(projected.x, projected.y, radius, 0, Math.PI * 2);
-    mapContext.fill();
-
-    if (post.id === state.selectedPostId) {
-      mapContext.strokeStyle = "rgba(23, 49, 40, 0.45)";
-      mapContext.lineWidth = 2;
-      mapContext.beginPath();
-      mapContext.arc(projected.x, projected.y, radius + 7, 0, Math.PI * 2);
-      mapContext.stroke();
-    }
-    mapContext.restore();
-
-    return { id: post.id, x: projected.x, y: projected.y, radius: radius + 8 };
+function markerElementForPost(post) {
+  const marker = document.createElement("button");
+  marker.type = "button";
+  marker.className = `mapbox-post-marker${post.id === state.selectedPostId ? " selected" : ""}${
+    post.creatorId === state.bootstrap.viewer.id ? " is-viewer" : ""
+  }`;
+  marker.innerHTML = `<span>${post.creatorId === state.bootstrap.viewer.id ? "You" : post.creatorName}</span>`;
+  marker.addEventListener("click", async (event) => {
+    event.stopPropagation();
+    await loadDetail(post.id);
   });
+  return marker;
+}
+
+function renderMapMarkers() {
+  if (!state.map) {
+    return;
+  }
+
+  clearMarkers();
+
+  for (const post of state.posts) {
+    const marker = new mapboxgl.Marker({
+      element: markerElementForPost(post),
+      anchor: "bottom"
+    })
+      .setLngLat([post.startLocation.lng, post.startLocation.lat])
+      .addTo(state.map);
+
+    state.markers.push(marker);
+  }
 }
 
 async function loadPosts() {
-  const bounds = currentBounds();
-  const { spanLat, spanLng } = currentSpans();
+  if (!state.map) {
+    return;
+  }
+
+  applyViewportFromMap();
+  const bounds = state.map.getBounds();
   const query = new URLSearchParams({
     centerLat: String(state.viewport.center.lat),
     centerLng: String(state.viewport.center.lng),
     zoom: String(state.viewport.zoom),
-    spanLat: String(spanLat),
-    spanLng: String(spanLng),
-    ...Object.fromEntries(Object.entries(bounds).map(([key, value]) => [key, String(value)]))
-  });
-  const payload = await requestJson(`/api/posts?${query.toString()}`);
+    minLat: String(bounds.getSouth()),
+    maxLat: String(bounds.getNorth()),
+    minLng: String(bounds.getWest()),
+    maxLng: String(bounds.getEast()),
+    spanLat: String(bounds.getNorth() - bounds.getSouth()),
+    spanLng: String(bounds.getEast() - bounds.getWest())
+  }).toString();
+
+  const payload = await requestJson(`/api/posts?${query}`);
   state.posts = payload.posts;
 
   if (state.selectedPostId && !state.posts.some((post) => post.id === state.selectedPostId)) {
@@ -352,7 +281,7 @@ async function loadPosts() {
 
   renderPostList();
   updateViewportLabels();
-  drawMap();
+  renderMapMarkers();
 }
 
 function scheduleLoadPosts() {
@@ -371,88 +300,96 @@ async function loadDetail(postId) {
   state.selectedPostId = postId;
   renderPostList();
   renderDetail();
-  drawMap();
+  renderMapMarkers();
+
+  const selected = state.posts.find((post) => post.id === postId);
+  if (selected && state.map) {
+    state.map.easeTo({
+      center: [selected.startLocation.lng, selected.startLocation.lat],
+      duration: 700
+    });
+  }
 }
 
-function applyZoom(delta) {
-  state.viewport.zoom = Math.max(0.75, Math.min(4.2, state.viewport.zoom * delta));
-  scheduleLoadPosts();
-  drawMap();
-}
+function installMapboxMap() {
+  if (!MAPBOX_TOKEN || !MAPBOX_TOKEN.startsWith("pk.") || typeof mapboxgl === "undefined") {
+    return;
+  }
 
-function installMapInteractions() {
-  let drag = null;
-
-  elements.mapCanvas.addEventListener("pointerdown", (event) => {
-    drag = {
-      startX: event.clientX,
-      startY: event.clientY,
-      lastX: event.clientX,
-      lastY: event.clientY,
-      moved: false
-    };
-    elements.mapCanvas.classList.add("dragging");
-    elements.mapCanvas.setPointerCapture(event.pointerId);
+  mapboxgl.accessToken = MAPBOX_TOKEN;
+  state.map = new mapboxgl.Map({
+    container: elements.mapElement,
+    style: "mapbox://styles/mapbox/light-v11",
+    center: [state.viewport.center.lng, state.viewport.center.lat],
+    zoom: state.viewport.zoom + 10.2,
+    attributionControl: false
   });
 
-  elements.mapCanvas.addEventListener("pointermove", (event) => {
-    if (!drag) {
+  state.map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "bottom-right");
+
+  state.map.on("load", () => {
+    if (state.map.getSource("places")) {
       return;
     }
 
-    const dx = event.clientX - drag.lastX;
-    const dy = event.clientY - drag.lastY;
-    drag.lastX = event.clientX;
-    drag.lastY = event.clientY;
-    drag.moved =
-      drag.moved ||
-      Math.abs(event.clientX - drag.startX) > 4 ||
-      Math.abs(event.clientY - drag.startY) > 4;
+    state.map.addSource("places", {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features: state.mapPlaces.map((place) => ({
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [place.lng, place.lat]
+          },
+          properties: { label: place.label }
+        }))
+      }
+    });
 
-    const { spanLat, spanLng } = currentSpans();
-    state.viewport.center.lng -= (dx / elements.mapCanvas.clientWidth) * spanLng;
-    state.viewport.center.lat += (dy / elements.mapCanvas.clientHeight) * spanLat;
-    drawMap();
+    state.map.addLayer({
+      id: "place-dots",
+      type: "circle",
+      source: "places",
+      paint: {
+        "circle-radius": 4,
+        "circle-color": "#C46A4A",
+        "circle-opacity": 0.68,
+        "circle-stroke-color": "#F7F5F2",
+        "circle-stroke-width": 1.5
+      }
+    });
+
+    state.map.addLayer({
+      id: "place-labels",
+      type: "symbol",
+      source: "places",
+      layout: {
+        "text-field": ["get", "label"],
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-size": 11,
+        "text-offset": [0, 1.2]
+      },
+      paint: {
+        "text-color": "#2C2C2C",
+        "text-halo-color": "rgba(247,245,242,0.9)",
+        "text-halo-width": 1
+      }
+    });
+
+    loadPosts().catch(console.error);
+  });
+
+  state.map.on("moveend", () => {
     scheduleLoadPosts();
   });
 
-  elements.mapCanvas.addEventListener("pointerup", async (event) => {
-    if (!drag) {
-      return;
-    }
-
-    elements.mapCanvas.classList.remove("dragging");
-    elements.mapCanvas.releasePointerCapture(event.pointerId);
-    const wasDrag = drag.moved;
-    drag = null;
-
-    if (wasDrag) {
-      return;
-    }
-
-    const rect = elements.mapCanvas.getBoundingClientRect();
-    const clickX = event.clientX - rect.left;
-    const clickY = event.clientY - rect.top;
-    const hit = state.markerScreenPositions.find(
-      (marker) => Math.hypot(marker.x - clickX, marker.y - clickY) <= marker.radius
-    );
-
-    if (hit) {
-      await loadDetail(hit.id);
-    }
+  state.map.on("error", (event) => {
+    console.error("Mapbox error:", event?.error || event);
   });
 
-  elements.mapCanvas.addEventListener(
-    "wheel",
-    (event) => {
-      event.preventDefault();
-      applyZoom(event.deltaY < 0 ? 1.12 : 0.9);
-    },
-    { passive: false }
-  );
-
-  elements.zoomIn.addEventListener("click", () => applyZoom(1.12));
-  elements.zoomOut.addEventListener("click", () => applyZoom(0.9));
+  elements.zoomIn.addEventListener("click", () => state.map?.zoomIn());
+  elements.zoomOut.addEventListener("click", () => state.map?.zoomOut());
 }
 
 function installComposer() {
@@ -488,10 +425,12 @@ function installComposer() {
     const formData = new FormData(elements.composerForm);
     const payload = Object.fromEntries(formData.entries());
     payload.startTime = new Date(payload.startTime).toISOString();
-    payload.startLat = state.viewport.center.lat;
-    payload.startLng = state.viewport.center.lng;
-    payload.endLat = state.viewport.center.lat + 0.0012;
-    payload.endLng = state.viewport.center.lng + 0.0012;
+
+    const center = state.map ? state.map.getCenter() : { lat: state.viewport.center.lat, lng: state.viewport.center.lng };
+    payload.startLat = center.lat;
+    payload.startLng = center.lng;
+    payload.endLat = center.lat + 0.0012;
+    payload.endLng = center.lng + 0.0012;
 
     const created = await requestJson("/api/posts", {
       method: "POST",
@@ -510,6 +449,13 @@ function installComposer() {
         notifications: created.plan.notifications
       }
     });
+
+    if (state.map) {
+      state.map.easeTo({
+        center: [created.post.startLocation.lng, created.post.startLocation.lat],
+        duration: 700
+      });
+    }
 
     await loadPosts();
     renderDetail();
@@ -548,22 +494,28 @@ async function initialize() {
   elements.workspaceTitle.textContent =
     state.bootstrap.brand?.promise || "Browse routines around you and post your own anchor.";
 
-  installMapInteractions();
   installComposer();
   installListInteractions();
-  await loadPosts();
+  installMapboxMap();
 
   const focusId = applyFocusFromUrl();
   if (focusId) {
     const focusedPost =
       state.posts.find((post) => post.id === focusId) ||
-      (await requestJson(`/api/posts/${focusId}`).then((detail) => {
-        state.detailCache.set(focusId, detail);
-        return detail.post;
-      }).catch(() => null));
+      (await requestJson(`/api/posts/${focusId}`)
+        .then((detail) => {
+          state.detailCache.set(focusId, detail);
+          return detail.post;
+        })
+        .catch(() => null));
 
     if (focusedPost) {
       state.viewport.center = { ...focusedPost.startLocation };
+      if (state.map) {
+        state.map.jumpTo({
+          center: [focusedPost.startLocation.lng, focusedPost.startLocation.lat]
+        });
+      }
       await loadPosts();
       await loadDetail(focusId);
     }
@@ -573,9 +525,7 @@ async function initialize() {
 }
 
 window.addEventListener("resize", () => {
-  if (state.bootstrap) {
-    drawMap();
-  }
+  state.map?.resize();
 });
 
 initialize().catch((error) => {

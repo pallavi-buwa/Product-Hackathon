@@ -66,6 +66,14 @@ async function serveStaticFile(response, relativePath = "index.html") {
   return true;
 }
 
+async function serveHtmlWithMapboxToken(response, fileName) {
+  let html = await readFile(path.join(uiDir, fileName), "utf-8");
+  const mbToken = process.env.MAPBOX_TOKEN || "";
+  html = html.replace('window.__MAPBOX_TOKEN = "";', `window.__MAPBOX_TOKEN = "${mbToken}";`);
+  response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+  response.end(html);
+}
+
 function getPagePath(pathname) {
   if (pathname === "/" || pathname === "/index.html") {
     return "index.html";
@@ -161,12 +169,19 @@ export function createServer({ port = 3030 } = {}) {
       if (request.method === "GET" && (pathname === "/social-map" || pathname === "/social-map.html")) {
         let html = await readFile(path.join(uiDir, "social-map.html"), "utf-8");
         const mbToken = process.env.MAPBOX_TOKEN || "";
-        html = html.replace(
-          'window.__MAPBOX_TOKEN || ""',
-          `"${mbToken}"`
-        );
+        html = html.replace('window.__MAPBOX_TOKEN || ""', `"${mbToken}"`);
         response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
         response.end(html);
+        return;
+      }
+
+      if (request.method === "GET" && (pathname === "/build" || pathname === "/build/" || pathname === "/build.html")) {
+        await serveHtmlWithMapboxToken(response, "build.html");
+        return;
+      }
+
+      if (request.method === "GET" && (pathname === "/" || pathname === "/index.html")) {
+        await serveHtmlWithMapboxToken(response, "index.html");
         return;
       }
 
