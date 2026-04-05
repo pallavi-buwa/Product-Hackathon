@@ -90,6 +90,7 @@ const elements = {
   workspaceRecsHistoryList: document.querySelector("#workspace-recs-history-list"),
   groupRecsCard: document.querySelector("#group-recs-card"),
   groupRecsList: document.querySelector("#group-recs-list"),
+  peopleNearbyFaces: document.querySelector("#people-nearby-faces"),
   friendBloomLayer: document.querySelector("#friend-bloom-layer")
 };
 
@@ -230,6 +231,27 @@ function escapeAttr(s) {
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;");
+}
+
+/** Same stable index as server `demoBuildApp` pravatar fallback. */
+function stablePravatarImg(id) {
+  const s = String(id || "anon");
+  let h = 0;
+  for (let i = 0; i < s.length; i += 1) {
+    h = Math.imul(31, h) + s.charCodeAt(i) || 0;
+  }
+  return (Math.abs(h) % 70) + 1;
+}
+
+function avatarUrlForCreator(creatorId, explicitUrl) {
+  if (explicitUrl && String(explicitUrl).trim()) {
+    return explicitUrl;
+  }
+  const fromBoot = state.bootstrap?.avatarUrlByUserId?.[creatorId];
+  if (fromBoot) {
+    return fromBoot;
+  }
+  return `https://i.pravatar.cc/96?img=${stablePravatarImg(creatorId)}`;
 }
 
 function updateHeatLayer() {
@@ -399,8 +421,10 @@ function renderRsvpInbox() {
           ? '<span class="rsvp-reveal-pill" title="Guest asked to stay hidden until 2 days before start">Late reveal</span>'
           : "";
       const kind = r.kind === "ritual" ? "Ritual" : "Event";
+      const guestAv = r.guestId ? avatarUrlForCreator(r.guestId, null) : "";
       return `
         <div class="rsvp-inbox-row" data-request-id="${escapeHtml(r.id)}">
+          <img class="rsvp-inbox-avatar" src="${escapeAttr(guestAv)}" alt="" width="40" height="40" loading="lazy" />
           <div class="rsvp-inbox-text">
             <span class="rsvp-kind-pill">${kind}</span>
             <strong>${escapeHtml(r.guestName)}</strong>
@@ -497,9 +521,14 @@ function renderNearbyEvents() {
         `;
       }
 
+      const hostAv = ev.hostId ? avatarUrlForCreator(ev.hostId, null) : "";
+      const hostImg = hostAv
+        ? `<img class="event-host-avatar" src="${escapeAttr(hostAv)}" alt="" width="40" height="40" loading="lazy" />`
+        : "";
       return `
         <div class="event-row event-row--compact" data-event-id="${idEsc}">
           <div class="event-row-main">
+            ${hostImg}
             <div class="event-row-text">
               <h5>${titleEsc}</h5>
               <p class="event-meta-line">${venueEsc} · ${escapeHtml(formatEventStarts(ev.startsAt))} · ${going} going</p>
@@ -663,6 +692,16 @@ function installConciergeChat() {
       ev.preventDefault();
       void send();
     }
+  });
+
+  document.querySelectorAll("#concierge-quick-prompts .concierge-chip").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const p = btn.dataset.prompt;
+      if (p && input) {
+        input.value = p;
+        input.focus();
+      }
+    });
   });
 }
 
@@ -1134,14 +1173,26 @@ function renderRepeatTemplateChips() {
   }
   const templates = state.repeatTemplates || [];
   elements.repeatTemplateChips.innerHTML = templates
-    .map(
-      (t) => `
-    <button type="button" class="repeat-template-chip repeat-template-chip--compact" data-template-id="${escapeHtml(
+    .map((t) => {
+      const ids = t.neighborIds || [];
+      const faces =
+        ids.length > 0
+          ? `<span class="repeat-chip-faces">${ids
+              .slice(0, 2)
+              .map(
+                (id) =>
+                  `<img src="${escapeAttr(avatarUrlForCreator(id, null))}" alt="" width="28" height="28" loading="lazy" />`
+              )
+              .join("")}</span>`
+          : "";
+      return `
+    <button type="button" class="repeat-template-chip repeat-template-chip--compact repeat-template-chip--with-faces" data-template-id="${escapeHtml(
       t.id
     )}" title="${escapeHtml([t.label, t.buddyLine].filter(Boolean).join(" — "))}">
+      ${faces}
       <span class="repeat-chip-title">${escapeHtml(t.label)}</span>
-    </button>`
-    )
+    </button>`;
+    })
     .join("");
   elements.repeatTemplateChips.querySelectorAll(".repeat-template-chip").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1207,12 +1258,37 @@ function renderPrivateSocialHealth() {
   elements.socialHealthBody.textContent = block.narrative;
 }
 
+function getAvatarForNeighborId(id) {
+  if (!id) {
+    return "";
+  }
+  const c = state.neighborContactsById?.[id];
+  return avatarUrlForCreator(id, c?.avatarUrl);
+}
+
+function recFaceStack(neighborIds) {
+  const ids = (neighborIds || []).filter(Boolean).slice(0, 3);
+  if (!ids.length) {
+    return "";
+  }
+  return `<div class="rec-item-faces" aria-hidden="true">${ids
+    .map(
+      (id) =>
+        `<img class="rec-face" src="${escapeAttr(getAvatarForNeighborId(id))}" alt="" width="40" height="40" loading="lazy" />`
+    )
+    .join("")}</div>`;
+}
+
 function recItemMarkup(item) {
+  const faces = recFaceStack(item.neighborIds);
   return `
-      <li class="workspace-recs-item">
-        <p class="workspace-recs-title">${escapeHtml(item.title)}</p>
-        <p class="workspace-recs-sub">${escapeHtml(item.subtitle || "")}</p>
-        <p class="workspace-recs-reason">${escapeHtml(item.reason)}</p>
+      <li class="workspace-recs-item workspace-recs-item--with-faces">
+        ${faces}
+        <div class="workspace-recs-text">
+          <p class="workspace-recs-title">${escapeHtml(item.title)}</p>
+          <p class="workspace-recs-sub">${escapeHtml(item.subtitle || "")}</p>
+          <p class="workspace-recs-reason">${escapeHtml(item.reason)}</p>
+        </div>
       </li>`;
 }
 
@@ -1224,10 +1300,12 @@ function renderWorkspaceVibeRecommendations() {
   }
   if (!list.length) {
     elements.workspaceVibeCard.hidden = true;
+    updateRecsVibeEmptyState();
     return;
   }
   elements.workspaceVibeCard.hidden = false;
   elements.workspaceVibeRecsList.innerHTML = list.map((item) => recItemMarkup(item)).join("");
+  updateRecsVibeEmptyState();
 }
 
 /** “Meet again” lines from shared ritual history. */
@@ -1238,10 +1316,33 @@ function renderWorkspaceHistoryRecommendations() {
   }
   if (!list.length) {
     elements.workspaceRecsHistoryCard.hidden = true;
+    updateRecsHistoryEmptyState();
     return;
   }
   elements.workspaceRecsHistoryCard.hidden = false;
   elements.workspaceRecsHistoryList.innerHTML = list.map((item) => recItemMarkup(item)).join("");
+  updateRecsHistoryEmptyState();
+}
+
+function updateRecsVibeEmptyState() {
+  const g = elements.groupRecsCard;
+  const v = elements.workspaceVibeCard;
+  const emptyEl = document.querySelector("#recs-vibe-empty");
+  if (!emptyEl) {
+    return;
+  }
+  const noG = !g || g.hidden;
+  const noV = !v || v.hidden;
+  emptyEl.hidden = !(noG && noV);
+}
+
+function updateRecsHistoryEmptyState() {
+  const h = elements.workspaceRecsHistoryCard;
+  const emptyEl = document.querySelector("#recs-history-empty");
+  if (!emptyEl) {
+    return;
+  }
+  emptyEl.hidden = !(h && h.hidden);
 }
 
 function renderGroupRecommendations() {
@@ -1251,24 +1352,38 @@ function renderGroupRecommendations() {
   }
   if (!list.length) {
     elements.groupRecsCard.hidden = true;
+    updateRecsVibeEmptyState();
     return;
   }
   elements.groupRecsCard.hidden = false;
   elements.groupRecsList.innerHTML = list.map((item) => recItemMarkup(item)).join("");
+  updateRecsVibeEmptyState();
 }
 
-function installExclusiveAccordions() {
-  const accordions = document.querySelectorAll("details.lodge-accordion");
-  accordions.forEach((det) => {
+/** Opening any item in the row opens all; closing one closes all. */
+function installSyncedRowAccordions(rowSelector) {
+  const row = document.querySelector(rowSelector);
+  if (!row) {
+    return;
+  }
+  const items = row.querySelectorAll(".lodge-accordion--cell");
+  let syncing = false;
+  items.forEach((det) => {
     det.addEventListener("toggle", () => {
-      if (!det.open) {
+      if (syncing) {
         return;
       }
-      accordions.forEach((other) => {
-        if (other !== det) {
-          other.open = false;
-        }
-      });
+      syncing = true;
+      if (det.open) {
+        items.forEach((d) => {
+          d.open = true;
+        });
+      } else {
+        items.forEach((d) => {
+          d.open = false;
+        });
+      }
+      syncing = false;
     });
   });
 }
@@ -1542,14 +1657,14 @@ function postCardMarkup(post) {
     .map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`)
     .join("");
   const isViewer = post.creatorId === state.bootstrap?.viewer?.id;
-  const avatarSrc = post.creatorAvatarUrl || "";
+  const avatarSrc = avatarUrlForCreator(post.creatorId, post.creatorAvatarUrl);
   const bondLine =
     post.bondBlurb && !isViewer
       ? `<p class="post-card-bond-line">${escapeHtml(post.bondBlurb)}</p>`
       : "";
   const avatarBlock = isViewer
     ? `<div class="post-card-avatar post-card-avatar--you post-card-avatar--sm" aria-hidden="true">You</div>`
-    : `<img class="post-card-avatar post-card-avatar--sm" src="${escapeAttr(avatarSrc)}" alt="" width="40" height="40" loading="lazy" />`;
+    : `<img class="post-card-avatar post-card-avatar--md" src="${escapeAttr(avatarSrc)}" alt="" width="48" height="48" loading="lazy" />`;
   const rsvpBlock = ritualPostRsvpMarkup(post);
   return `
     <article class="post-card post-card--strip post-card--compact ${selected}" data-post-id="${post.id}" role="listitem">
@@ -1639,17 +1754,63 @@ function bindPostRsvpHandlers() {
   });
 }
 
+function renderPeopleNearbyFaces() {
+  const host = elements.peopleNearbyFaces;
+  if (!host) {
+    return;
+  }
+  const vid = state.bootstrap?.viewer?.id;
+  const seen = new Set();
+  const faces = [];
+  for (const p of state.posts || []) {
+    if (!p.creatorId || p.creatorId === vid) {
+      continue;
+    }
+    if (seen.has(p.creatorId)) {
+      continue;
+    }
+    seen.add(p.creatorId);
+    faces.push({
+      id: p.creatorId,
+      name: p.creatorName || "Neighbor",
+      url: avatarUrlForCreator(p.creatorId, p.creatorAvatarUrl)
+    });
+    if (faces.length >= 16) {
+      break;
+    }
+  }
+  if (!faces.length) {
+    host.innerHTML = "";
+    host.hidden = true;
+    return;
+  }
+  host.hidden = false;
+  host.innerHTML = faces
+    .map(
+      (f) =>
+        `<button type="button" class="people-nearby-face" data-neighbor-id="${escapeAttr(f.id)}" title="${escapeAttr(f.name)}">
+        <img src="${escapeAttr(f.url)}" alt="" width="52" height="52" loading="lazy" />
+      </button>`
+    )
+    .join("");
+  host.querySelectorAll(".people-nearby-face").forEach((btn) => {
+    btn.addEventListener("click", () => focusNeighborOnMap(btn.dataset.neighborId));
+  });
+}
+
 function renderPostList() {
   if (!state.posts.length) {
     elements.postList.innerHTML = emptyWithMascot(
       "Pan the map or publish a ritual — open posts show here in a row.",
       { variant: "inline", extraWrapClass: "empty-with-mascot--spacious", pClass: "empty-state map-posts-empty" }
     );
+    renderPeopleNearbyFaces();
     return;
   }
 
   elements.postList.innerHTML = state.posts.map(postCardMarkup).join("");
   bindPostRsvpHandlers();
+  renderPeopleNearbyFaces();
 }
 
 function applyViewportFromMap() {
@@ -1687,7 +1848,7 @@ function markerElementForPost(post) {
     `Open ritual: ${ritualTitle}. ${who} — hover for details`
   );
   const face = !isViewer
-    ? `<img class="marker-avatar" src="${escapeAttr(post.creatorAvatarUrl || "")}" alt="" width="34" height="34" />`
+    ? `<img class="marker-avatar" src="${escapeAttr(avatarUrlForCreator(post.creatorId, post.creatorAvatarUrl))}" alt="" width="40" height="40" />`
     : `<span class="marker-avatar marker-avatar--you" aria-hidden="true">Y</span>`;
   marker.innerHTML = `<span class="marker-pin-inner">${face}<span class="marker-name">${isViewer ? "You" : escapeHtml(post.creatorName)}</span><span class="marker-ritual-label" title="${escapeAttr(ritualTitle)}">${escapeHtml(ritualShort)}</span></span>`;
   marker.addEventListener("click", async (event) => {
@@ -2122,7 +2283,9 @@ async function initialize() {
   renderWorkspaceVibeRecommendations();
   renderWorkspaceHistoryRecommendations();
   renderGroupRecommendations();
-  installExclusiveAccordions();
+  installSyncedRowAccordions(".build-accordion-row--top");
+  installSyncedRowAccordions(".build-accordion-row--mid");
+  installSyncedRowAccordions(".build-accordion-row--bottom");
   installComposer();
   installTrustRepeatPanel();
   renderRsvpInbox();

@@ -327,6 +327,14 @@ export function createServer({ port = 3030 } = {}) {
         return;
       }
 
+      if (
+        request.method === "GET" &&
+        (pathname === "/build/explore" || pathname === "/build/explore/" || pathname === "/build/explore.html")
+      ) {
+        await serveHtmlWithMapboxToken(response, "build-explore.html");
+        return;
+      }
+
       if (request.method === "GET" && (pathname === "/" || pathname === "/index.html")) {
         await serveHtmlWithMapboxToken(response, "index.html");
         return;

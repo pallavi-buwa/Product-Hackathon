@@ -786,7 +786,8 @@
       "durationMinutes": 40,
       "contextTags": ["coffee", "walk", "gentle"],
       "buddyLine": "Maya & Sam often open this slot — easy to sync again.",
-      "errandPresetId": "coffee"
+      "errandPresetId": "coffee",
+      "neighborIds": ["maya", "sam"]
     },
     {
       "id": "rep-bridge-walk",
@@ -798,7 +799,8 @@
       "durationMinutes": 35,
       "contextTags": ["walk", "gentle"],
       "buddyLine": "You and Priya have done this route before.",
-      "errandPresetId": null
+      "errandPresetId": null,
+      "neighborIds": ["priya"]
     },
     {
       "id": "rep-market-run",
@@ -810,7 +812,8 @@
       "durationMinutes": 45,
       "contextTags": ["market", "cooking"],
       "buddyLine": "Elena’s usual tasting loop — join the rhythm.",
-      "errandPresetId": "grocery"
+      "errandPresetId": "grocery",
+      "neighborIds": ["elena"]
     }
   ],
   "workspaceFunFacts": [

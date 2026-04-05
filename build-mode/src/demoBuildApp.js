@@ -24,6 +24,7 @@ import {
   createOpenAISilentBridgeMessageBuilder
 } from "./silentBridge.js";
 import { computeSocialHeatZones } from "./livingMapHeat.js";
+import { demoAvatarUrlByUserId } from "./demoAvatars.js";
 import { computeSocialHealthMetrics, computeSocialHealthScore } from "./socialHealthScore.js";
 import { buildGroupRecommendations, buildWorkspaceRecommendations } from "./workspaceRecommendations.js";
 import {
@@ -218,8 +219,12 @@ function displayAvatarForProfile(profile) {
   if (profile?.avatarUrl) {
     return profile.avatarUrl;
   }
-  const id = profile?.id || profile?.firstName || "neighbor";
-  return `https://i.pravatar.cc/96?img=${stablePravatarImg(id)}`;
+  const id = profile?.id;
+  if (id && demoAvatarUrlByUserId[id]) {
+    return demoAvatarUrlByUserId[id];
+  }
+  const fallbackKey = id || profile?.firstName || "neighbor";
+  return `https://i.pravatar.cc/96?img=${stablePravatarImg(fallbackKey)}`;
 }
 
 function bondWithNeighbor(ritualBonds, neighborId) {
@@ -420,6 +425,7 @@ export class DemoBuildModeApp {
     return {
       brand: this.state.brand,
       globeSignals: expandGlobeSignals(this.state.globeSignals || []),
+      avatarUrlByUserId: { ...demoAvatarUrlByUserId },
       viewer: this.getProfile(this.state.viewerId),
       viewport,
       mapPlaces: this.state.mapPlaces,
