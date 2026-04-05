@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lodge</title>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand-home" href="/" aria-label="Go to the Lodge home page">
+        <img class="brand-logo-full" src="/lodge-logo.png" alt="Lodge — Find your people" width="220" height="56"
+          decoding="async" />
+      </a>
+      <nav class="topbar-links">
+        <a href="/">Home</a>
+        <a href="/build">Explore Nearby</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="page-shell">
+    <main>
+      <section class="hero landing-hero">
+        <div class="hero-copy reveal">
+          <div class="hero-headline-stack">
+            <div class="hero-blobs" aria-hidden="true">
+              <span class="hero-blob hero-blob--sage"></span>
+              <span class="hero-blob hero-blob--gold"></span>
+              <span class="hero-blob hero-blob--clay"></span>
+            </div>
+            <div class="hero-headline-content">
+              <div class="hero-mascot-slot" aria-hidden="true">
+                <span class="lodge-mascot-wrap lodge-mascot-wrap--hero">
+                  <img class="lodge-mascot-img" src="/lodge-mascot.svg" width="64" height="64" alt=""
+                    decoding="async" />
+                </span>
+              </div>
+              <h2 id="hero-title">Let everyday routines feel a little less solitary.</h2>
+              <p class="hero-text" id="hero-text">
+                Lodge helps you share the quiet parts of everyday life.
+              </p>
+            </div>
+          </div>
+          <div class="hero-actions">
+            <a class="primary-button" href="/build">Explore nearby</a>
+          </div>
+          <div class="hero-feature-grid">
+            <article class="card feature-card compact-feature-card">
+              <p class="eyebrow">1. Post</p>
+              <h4>Share one small part of your routine.</h4>
+            </article>
+
+            <article class="card feature-card compact-feature-card">
+              <p class="eyebrow">2. Match</p>
+              <h4>See people who already fit your rhythm.</h4>
+            </article>
+          </div>
+        </div>
+
+        <div class="hero-visual reveal">
+          <div class="globe-card">
+            <div class="globe-card-header">
+              <div>
+                <p class="eyebrow">Shared rhythms</p>
+                <h3>See where people are already showing up!</h3>
+              </div>
+              <span class="lodge-mascot-wrap lodge-mascot-wrap--micro lodge-mascot-wrap--still globe-card-mascot"
+                aria-hidden="true">
+                <img class="lodge-mascot-img" src="/lodge-mascot.svg" width="34" height="34" alt="" decoding="async" />
+              </span>
+            </div>
+            <div id="globe-map" aria-label="Interactive earth globe"></div>
+            <p class="globe-instruction">Click and drag to spin. Scroll to zoom.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+  <script>window.__MAPBOX_TOKEN = "";</script>
+  <script type="module" src="/landing.js"></script>
+</body>
+
+</html>

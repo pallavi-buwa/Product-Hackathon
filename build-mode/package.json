@@ -1,0 +1,14 @@
+{
+  "name": "lodge-build-mode",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Routine Matchmaker engine for Lodge Build Mode.",
+  "scripts": {
+    "start": "node --env-file=.env ./src/server.js",
+    "demo": "node ./src/example.js",
+    "test": "node --test ./tests/*.test.js"
+  }
+}
+
+

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lodge — Full view</title>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="build-explore-body">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand-home" href="/" aria-label="Go to the Lodge home page">
+          <img class="brand-logo-full" src="/lodge-logo.png" alt="Lodge" width="220" height="56" decoding="async" />
+        </a>
+        <nav class="topbar-links">
+          <a href="/">Home</a>
+          <a href="/build">Explore Nearby</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="page-shell explore-page-shell">
+      <a class="explore-back" href="/build">← Back to Explore Nearby</a>
+      <h1 class="explore-page-title" id="explore-page-title">Full view</h1>
+      <p class="explore-page-lead" id="explore-page-lead"></p>
+
+      <div class="explore-split">
+        <div class="explore-list-column">
+          <div id="explore-list" class="explore-list" role="region"></div>
+        </div>
+        <div class="explore-map-column">
+          <div id="explore-map" class="explore-map" aria-label="Map"></div>
+          <p class="explore-map-hint">Same area as Explore Nearby — pan to refresh pins.</p>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+    <script>window.__MAPBOX_TOKEN = "";</script>
+    <script type="module" src="/build-explore.js"></script>
+  </body>
+</html>

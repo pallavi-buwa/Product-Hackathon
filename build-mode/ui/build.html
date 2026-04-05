@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lodge Explore Nearby</title>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand-home" href="/" aria-label="Go to the Lodge home page">
+          <img
+            class="brand-logo-full"
+            src="/lodge-logo.png"
+            alt="Lodge — Find your people"
+            width="220"
+            height="56"
+            decoding="async"
+          />
+        </a>
+        <nav class="topbar-links">
+          <a href="/">Home</a>
+          <a href="/build">Explore Nearby</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="page-shell">
+      <main class="build-page-main">
+        <section class="workspace reveal" id="build-app">
+          <div class="section-header">
+            <div>
+              <h3 id="workspace-title">Browse routines around you and post your own anchor.</h3>
+              <p id="workspace-error" class="workspace-error" hidden></p>
+            </div>
+            <div class="section-status">
+              <span id="viewport-label">Current area</span>
+              <span id="post-count-label">0 posts nearby</span>
+            </div>
+          </div>
+
+          <div class="build-layout">
+            <div id="live-toast-host" class="live-toast-host live-toast-host--build" aria-live="polite"></div>
+
+            <div class="build-accordion-row build-accordion-row--top" role="group" aria-label="Create and profile">
+              <details class="card lodge-accordion lodge-accordion--cell" id="accordion-post">
+                <summary class="lodge-accordion-summary">
+                  <img
+                    class="lodge-accordion-logo"
+                    src="/lodge-logo.png"
+                    alt=""
+                    width="40"
+                    height="40"
+                    decoding="async"
+                  />
+                  <span class="lodge-accordion-heading">Let people join you along</span>
+                </summary>
+                <div class="lodge-accordion-panel lodge-accordion-panel--tight">
+                  <a class="build-see-all-link" href="/build/explore?view=rituals" target="_blank" rel="noopener"
+                    >View all open rituals + map</a
+                  >
+                  <div class="accordion-panel-scroll accordion-panel-scroll--section">
+                  <aside class="composer-card" id="composer">
+                    <form id="composer-form">
+                      <label>
+                        Label
+                        <input name="label" type="text" required />
+                      </label>
+
+                      <div class="split-fields">
+                        <label>
+                          Routine
+                          <select name="type" id="routine-type-select"></select>
+                        </label>
+
+                        <label>
+                          Group size
+                          <input name="desiredGroupSize" type="number" min="1" max="4" />
+                        </label>
+                      </div>
+
+                      <div class="split-fields">
+                        <label>
+                          Start time
+                          <input name="startTime" type="datetime-local" required />
+                        </label>
+
+                        <label>
+                          Duration
+                          <input name="durationMinutes" type="number" min="15" max="180" />
+                        </label>
+                      </div>
+
+                      <label class="spot-block">
+                        <span class="spot-label-row">Spot name</span>
+                        <input name="localSpotName" type="text" required />
+                        <span class="spot-map-hint">Pin drops at <strong>map center</strong> — pan first if you want another corner.</span>
+                      </label>
+
+                      <label>
+                        Weekly cadence
+                        <input name="cadencePerWeek" type="number" min="1" max="7" />
+                      </label>
+
+                      <label>
+                        Context tags <span class="label-optional">(optional)</span>
+                        <input
+                          name="contextTags"
+                          type="text"
+                          placeholder="e.g. walk, coffee, market"
+                        />
+                      </label>
+
+                      <button class="primary-button wide-button" type="submit">Publish ritual</button>
+                    </form>
+                  </aside>
+                  </div>
+                </div>
+              </details>
+
+              <details class="card lodge-accordion lodge-accordion--cell" id="accordion-errand">
+                <summary class="lodge-accordion-summary">
+                  <img
+                    class="lodge-accordion-logo"
+                    src="/lodge-logo.png"
+                    alt=""
+                    width="40"
+                    height="40"
+                    decoding="async"
+                  />
+                  <span class="lodge-accordion-heading">Want company for a quick errand?</span>
+                </summary>
+                <div class="lodge-accordion-panel lodge-accordion-panel--tight">
+                  <a class="build-see-all-link" href="/build/explore?view=activity" target="_blank" rel="noopener"
+                    >View full plan + map</a
+                  >
+                  <div class="accordion-panel-scroll accordion-panel-scroll--section">
+                  <section class="errands-sidebar-card" id="errands-card">
+                    <p class="card-hint lodge-panel-hint">We’ll ping if a neighbor’s ritual lines up.</p>
+                    <div id="errand-preset-row" class="preset-chip-row"></div>
+                    <label>
+                      Note <span class="label-optional">(optional)</span>
+                      <input type="text" id="errand-custom-label" placeholder="e.g. Roastery refill" />
+                    </label>
+                    <div class="split-fields">
+                      <label>
+                        Minutes
+                        <input type="number" id="errand-window" min="10" max="120" value="25" />
+                      </label>
+                      <label class="checkbox-inline">
+                        <input type="checkbox" id="errand-tag-along" checked />
+                        OK if someone joins
+                      </label>
+                    </div>
+                    <button type="button" class="primary-button wide-button" id="add-errand-btn">Log errand</button>
+                  </section>
+                  </div>
+                </div>
+              </details>
+
+              <details class="card lodge-accordion lodge-accordion--cell" id="accordion-profile">
+                <summary class="lodge-accordion-summary">
+                  <img
+                    class="lodge-accordion-logo"
+                    src="/lodge-logo.png"
+                    alt=""
+                    width="40"
+                    height="40"
+                    decoding="async"
+                  />
+                  <span class="lodge-accordion-heading">Let us know what your interests are</span>
+                </summary>
+                <div class="lodge-accordion-panel lodge-accordion-panel--tight">
+                  <div class="accordion-panel-scroll accordion-panel-scroll--section">
+                  <section
+                    class="social-health-card"
+                    id="social-health-card"
+                    aria-labelledby="social-health-heading"
+                  >
+                    <div class="social-health-card-head">
+                      <span class="pill pill-private">Private · never shared</span>
+                      <h4 id="social-health-heading">Social Health Score</h4>
+                    </div>
+                    <div class="social-health-score-row" id="social-health-score-row" hidden>
+                      <div class="social-health-score-ring" aria-hidden="true">
+                        <span id="social-health-score-value" class="social-health-score-value">—</span>
+                      </div>
+                      <div class="social-health-score-meta">
+                        <p id="social-health-band" class="social-health-band"></p>
+                        <p class="social-health-score-caption">
+                          For your eyes only — not a leaderboard. Reflects rhythm from check-ins you log.
+                        </p>
+                      </div>
+                    </div>
+                    <p id="social-health-body" class="social-health-body"></p>
+                    <p class="social-health-footnote">
+                      Wellbeing lens, not a dating score. Neighbors never see this number.
+                    </p>
+                  </section>
+                  <div id="hobby-chip-field" class="chip-field"></div>
+                  <div id="quick-choice-fields" class="quick-choice-stack"></div>
+                  <div class="willing-scale-block">
+                    <label class="range-label" for="willing-events-range">Open to local events</label>
+                    <div class="willing-scale-wrap">
+                      <input
+                        type="range"
+                        id="willing-events-range"
+                        min="1"
+                        max="5"
+                        step="1"
+                        aria-valuemin="1"
+                        aria-valuemax="5"
+                      />
+                      <div class="willing-scale-ticks" aria-hidden="true">
+                        <span>1</span>
+                        <span>2</span>
+                        <span>3</span>
+                        <span>4</span>
+                        <span>5</span>
+                      </div>
+                    </div>
+                    <p class="willing-scale-caption">
+                      <span id="willing-events-value" class="range-value">3</span>
+                      <span class="willing-scale-meta">1 = low · 5 = very open</span>
+                    </p>
+                  </div>
+                  <button type="button" class="ghost-button wide-button" id="save-signals-btn">Save profile</button>
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <div class="build-accordion-row build-accordion-row--mid" role="group" aria-label="Inbox, plans, events, and help">
+              <details class="card lodge-accordion lodge-accordion--cell lodge-accordion--compact" id="accordion-inbox">
+                <summary class="lodge-accordion-summary">
+                  <img class="lodge-accordion-logo" src="/lodge-logo.png" alt="" width="32" height="32" decoding="async" />
+                  <span class="lodge-accordion-heading">Someone wants to join you…</span>
+                </summary>
+                <div class="lodge-accordion-panel lodge-accordion-panel--tight">
+                  <a class="build-see-all-link" href="/build/explore?view=rsvp" target="_blank" rel="noopener"
+                    >Full inbox + map</a
+                  >
+                  <p class="card-hint lodge-panel-hint">Accept or decline join requests for your open rituals.</p>
+                  <div class="accordion-panel-scroll">
+                    <div id="rsvp-inbox-list" class="rsvp-inbox-list"></div>
+                  </div>
+                </div>
+              </details>
+
+              <details class="card lodge-accordion lodge-accordion--cell lodge-accordion--compact" id="accordion-activity">
+                <summary class="lodge-accordion-summary">
+                  <img class="lodge-accordion-logo" src="/lodge-logo.png" alt="" width="32" height="32" decoding="async" />
+                  <span class="lodge-accordion-heading">What have we already planned?</span>
+                </summary>
+                <div class="lodge-accordion-panel lodge-accordion-panel--tight">
+                  <a class="build-see-all-link" href="/build/explore?view=activity" target="_blank" rel="noopener"
+                    >Full plan + map</a
+                  >
+                  <div class="accordion-panel-scroll">
+                    <section class="my-activity-card my-activity-card--nested" id="my-activity-card">
+                      <div id="my-activity-body" class="my-activity-body"></div>
+                      <div id="my-favorites-block" class="my-favorites-block" hidden>
+                        <p class="eyebrow favorites-label">Saved errands</p>
+                        <div id="my-favorites-list" class="my-favorites-list"></div>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+              </details>
+
+              <details class="card lodge-accordion lodge-accordion--cell lodge-accordion--compact" id="accordion-events">
+                <summary class="lodge-accordion-summary">
+                  <img class="lodge-accordion-logo" src="/lodge-logo.png" alt="" width="32" height="32" decoding="async" />
+                  <span class="lodge-accordion-heading">What’s happening this week?</span>
+                </summary>
+                <div class="lodge-accordion-panel lodge-accordion-panel--tight">
+                  <a class="build-see-all-link" href="/build/explore?view=events" target="_blank" rel="noopener"
+                    >All events + map</a
+                  >
+                  <p class="card-hint events-sidebar-hint lodge-panel-hint">Opt in, then RSVP — host accepts or declines.</p>
+                  <div class="accordion-panel-scroll">
+                    <div id="nearby-events-list" class="map-events-list events-sidebar-list"></div>
+                  </div>
+                </div>
+              </details>
+
+              <details class="card lodge-accordion lodge-accordion--cell lodge-accordion--compact" id="accordion-concierge">
+                <summary class="lodge-accordion-summary">
+                  <img class="lodge-accordion-logo" src="/lodge-logo.png" alt="" width="32" height="32" decoding="async" />
+                  <span class="lodge-accordion-heading">Help with invites &amp; wording</span>
+                </summary>
+                <div class="lodge-accordion-panel lodge-accordion-panel--tight">
+                  <div class="concierge-body concierge-body--intuitive" id="concierge-card">
+                    <p class="concierge-lead">
+                      Not sure what to say? Pick a starter below, edit it, then send. We never auto-message anyone for you.
+                    </p>
+                    <div class="concierge-quick-prompts" id="concierge-quick-prompts" aria-label="Quick prompts">
+                      <button type="button" class="concierge-chip" data-prompt="Write a short, friendly invitation to join me for a casual neighborhood walk this week — no pressure if they’re busy.">
+                        Casual walk invite
+                      </button>
+                      <button type="button" class="concierge-chip" data-prompt="Help me phrase a message asking if someone wants to tag along on a quick coffee run in the next hour.">
+                        Coffee run ask
+                      </button>
+                      <button type="button" class="concierge-chip" data-prompt="Suggest a polite RSVP reply I can send to someone who asked to join my ritual.">
+                        RSVP reply ideas
+                      </button>
+                    </div>
+                    <div id="concierge-thread" class="concierge-thread" aria-live="polite"></div>
+                    <label class="concierge-label">
+                      Your message to the assistant
+                      <textarea
+                        id="concierge-input"
+                        rows="3"
+                        placeholder="Type here or tap a starter above — we’ll help you polish wording only."
+                      ></textarea>
+                    </label>
+                    <button type="button" class="primary-button wide-button" id="concierge-send">Get suggestions</button>
+                    <p id="concierge-status" class="concierge-status" hidden></p>
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <section class="card map-card map-card-with-events build-map-section">
+              <div class="card-header">
+                <div>
+                  <p class="eyebrow">Map</p>
+                  <h4>Nearby rituals</h4>
+                </div>
+                <div class="map-controls">
+                  <button class="map-button" id="zoom-in" type="button">+</button>
+                  <button class="map-button" id="zoom-out" type="button">−</button>
+                </div>
+              </div>
+
+              <div class="map-column-stack map-column-stack--map-only">
+                <div class="map-shell">
+                  <div id="map" aria-label="Interactive neighborhood map"></div>
+                  <div class="map-legend">
+                    <span class="legend-heat">
+                      <i class="heat-dot"></i> Activity heat
+                    </span>
+                    <span><i class="marker marker-live"></i> Open ritual</span>
+                    <span><i class="marker marker-you"></i> Your post</span>
+                    <span class="legend-fit"><i class="fit-legend-badge">%</i> Hover pin</span>
+                  </div>
+                  <div id="match-spotlight" class="match-spotlight" hidden>
+                    <div class="match-spotlight-backdrop" id="spotlight-backdrop"></div>
+                    <div
+                      class="match-spotlight-card"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-labelledby="spotlight-title"
+                    >
+                      <button type="button" class="spotlight-close" id="spotlight-close" aria-label="Close">
+                        &times;
+                      </button>
+                      <div class="spotlight-profile-row">
+                        <img
+                          id="spotlight-avatar"
+                          class="spotlight-avatar"
+                          width="56"
+                          height="56"
+                          alt=""
+                          hidden
+                        />
+                        <div class="spotlight-profile-text">
+                          <p class="eyebrow">Suggestion</p>
+                          <h4 id="spotlight-title">Someone nearby</h4>
+                        </div>
+                      </div>
+                      <p id="spotlight-body" class="spotlight-body spotlight-body--fit-only"></p>
+                      <div class="spotlight-actions">
+                        <button type="button" class="primary-button" id="spotlight-open-pin">Show on map</button>
+                        <button type="button" class="ghost-button" id="spotlight-dismiss">Dismiss</button>
+                      </div>
+                      <p class="spotlight-feedback-label">Useful?</p>
+                      <div class="spotlight-feedback-row">
+                        <button type="button" class="ghost-button feedback-chip" id="spotlight-helpful" data-helpful="1">
+                          Yes
+                        </button>
+                        <button type="button" class="ghost-button feedback-chip" id="spotlight-not-helpful" data-helpful="0">
+                          No
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="map-pin-tooltip" class="map-pin-tooltip" role="tooltip" hidden></div>
+                </div>
+              </div>
+            </section>
+
+            <section class="card map-posts-card" id="map-posts-section">
+              <p class="map-posts-section-title">Open rituals</p>
+              <a class="build-see-all-link" href="/build/explore?view=rituals" target="_blank" rel="noopener"
+                >View all rituals + map</a
+              >
+              <p class="map-posts-section-hint">
+                Tap a card to focus the pin. RSVP to ask the host if you can join.
+              </p>
+              <div class="accordion-panel-scroll accordion-panel-scroll--map-posts">
+                <div class="map-posts-row" id="post-list" role="list"></div>
+              </div>
+            </section>
+
+            <section class="card people-nearby-card" aria-labelledby="people-nearby-heading">
+              <h3 id="people-nearby-heading" class="people-nearby-title">People nearby</h3>
+              <p class="people-nearby-lead">Hosts on the map right now — tap a face to find their pin.</p>
+              <p class="people-nearby-tools">
+                <a class="build-see-all-link" href="/build/explore?view=picks" target="_blank" rel="noopener"
+                  >View all suggestions &amp; repeats + map</a
+                >
+              </p>
+              <div class="accordion-panel-scroll accordion-panel-scroll--faces">
+                <div id="people-nearby-faces" class="people-nearby-faces" hidden></div>
+              </div>
+
+              <section class="trust-repeat-card trust-repeat-card--people" id="trust-repeat-card">
+                <p class="fun-fact-rotator" id="fun-fact-rotator" aria-live="polite"></p>
+                <div id="bonds-row" class="bonds-row" role="list"></div>
+                <div class="empty-with-mascot bonds-empty-with-mascot" id="bonds-empty" hidden>
+                  <span class="lodge-mascot-wrap lodge-mascot-wrap--tiny lodge-mascot-wrap--still" aria-hidden="true">
+                    <img
+                      class="lodge-mascot-img"
+                      src="/lodge-mascot.svg"
+                      width="38"
+                      height="38"
+                      alt=""
+                      decoding="async"
+                    />
+                  </span>
+                  <p class="bonds-empty-text">No link-ups in demo data.</p>
+                </div>
+              </section>
+
+              <div class="build-accordion-row build-accordion-row--bottom" role="group" aria-label="Suggestions and repeats">
+                <details class="card lodge-accordion lodge-accordion--cell" id="accordion-recs-vibe">
+                  <summary class="lodge-accordion-summary">
+                    <img
+                      class="lodge-accordion-logo"
+                      src="/lodge-logo.png"
+                      alt=""
+                      width="40"
+                      height="40"
+                      decoding="async"
+                    />
+                    <span class="lodge-accordion-heading">Match your vibe</span>
+                  </summary>
+                  <div class="lodge-accordion-panel lodge-accordion-panel--tight">
+                    <div class="accordion-panel-scroll accordion-panel-scroll--recs">
+                    <div id="group-recs-card" class="rec-panel-block" hidden>
+                      <p class="rec-subsection-hint">Small groups where your signals line up.</p>
+                      <ul id="group-recs-list" class="workspace-recs-list" aria-label="Group matches"></ul>
+                    </div>
+                    <div id="workspace-vibe-card" class="rec-panel-block rec-panel-block--tight" hidden>
+                      <p class="rec-subsection-lead">Similar rhythm</p>
+                      <ul id="workspace-vibe-recs-list" class="workspace-recs-list" aria-label="Similar taste"></ul>
+                    </div>
+                    <p id="recs-vibe-empty" class="rec-panel-empty" hidden>No group or taste matches yet — tweak interests and save.</p>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="card lodge-accordion lodge-accordion--cell" id="accordion-recs-history">
+                  <summary class="lodge-accordion-summary">
+                    <img
+                      class="lodge-accordion-logo"
+                      src="/lodge-logo.png"
+                      alt=""
+                      width="40"
+                      height="40"
+                      decoding="async"
+                    />
+                    <span class="lodge-accordion-heading">Because you’ve done this before — want to join?</span>
+                  </summary>
+                  <div class="lodge-accordion-panel lodge-accordion-panel--tight">
+                    <div class="accordion-panel-scroll accordion-panel-scroll--recs">
+                    <div id="workspace-recs-history-card" class="rec-panel-block" hidden>
+                      <ul id="workspace-recs-history-list" class="workspace-recs-list" aria-label="History picks"></ul>
+                    </div>
+                    <p id="recs-history-empty" class="rec-panel-empty" hidden>Nothing here yet — link up on a ritual first.</p>
+                    </div>
+                  </div>
+                </details>
+
+                <details class="card lodge-accordion lodge-accordion--cell" id="accordion-repeats">
+                  <summary class="lodge-accordion-summary">
+                    <img
+                      class="lodge-accordion-logo"
+                      src="/lodge-logo.png"
+                      alt=""
+                      width="40"
+                      height="40"
+                      decoding="async"
+                    />
+                    <span class="lodge-accordion-heading">Repeat since you liked it</span>
+                  </summary>
+                  <div class="lodge-accordion-panel lodge-accordion-panel--tight">
+                    <p class="repeats-under-map-hint">Fills the post form in the top row.</p>
+                    <div class="accordion-panel-scroll accordion-panel-scroll--recs">
+                    <div id="repeat-template-chips" class="repeat-template-chips repeat-template-chips--inline"></div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="friend-bloom-layer" class="friend-bloom-layer" aria-hidden="true">
+      <div class="friend-bloom-glow" aria-hidden="true"></div>
+      <div class="friend-bloom-flower" role="presentation">
+        <span class="friend-bloom-petal"></span>
+        <span class="friend-bloom-petal"></span>
+        <span class="friend-bloom-petal"></span>
+        <span class="friend-bloom-petal"></span>
+        <span class="friend-bloom-petal"></span>
+        <span class="friend-bloom-petal"></span>
+        <span class="friend-bloom-core"></span>
+      </div>
+    </div>
+
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+    <script>window.__MAPBOX_TOKEN = "";</script>
+    <script type="module" src="/build.js"></script>
+  </body>
+</html>

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lodge — Social Opportunity Map</title>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #030508;
+      --phone-bg: #0B0F1A;
+      --surface: #141926;
+      --border: #2A2F42;
+      --text: #E8E8ED;
+      --muted: #6B7194;
+      --accent: #6366F1;
+      --accent-light: #818CF8;
+      --success: #34D399;
+      --warning: #FBBF24;
+      --danger: #F87171;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== PAGE LAYOUT ===== */
+    .page { min-height: 100vh; }
+
+    .nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 32px; max-width: 1200px; margin: 0 auto;
+    }
+    .nav-brand { display: flex; align-items: center; line-height: 0; }
+    .nav-brand-logo {
+      height: 36px;
+      width: auto;
+      max-width: min(200px, 50vw);
+      display: block;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .nav-link { font-size: 12px; color: var(--muted); text-decoration: none; }
+    .nav-link:hover { color: var(--text); }
+
+    .hero-row {
+      max-width: 1200px; margin: 0 auto; padding: 40px 32px 60px;
+      display: flex; align-items: center; gap: 48px;
+    }
+
+    .hero-copy { flex: 1; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 500;
+      background: rgba(99,102,241,0.1); color: var(--accent-light);
+      border: 1px solid rgba(99,102,241,0.2); margin-bottom: 20px;
+    }
+    .hero-title {
+      font-size: 44px; font-weight: 800; line-height: 1.1; letter-spacing: -1px; margin-bottom: 12px;
+    }
+    .hero-title span { color: var(--accent-light); }
+    .hero-desc { color: var(--muted); font-size: 16px; line-height: 1.6; max-width: 420px; margin-bottom: 28px; }
+
+    .stats-row { display: flex; gap: 24px; }
+    .stat-num { font-size: 24px; font-weight: 800; color: var(--accent-light); }
+    .stat-label { font-size: 10px; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+
+    /* ===== PHONE FRAME ===== */
+    .phone-wrap { flex-shrink: 0; }
+    .phone {
+      position: relative; width: 375px; height: 780px;
+      border-radius: 44px; border: 5px solid #1a1a1a;
+      background: var(--phone-bg); overflow: hidden;
+      box-shadow: 0 0 80px rgba(99,102,241,0.06);
+      display: flex; flex-direction: column;
+    }
+    .phone-notch {
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 120px; height: 30px; background: #000; border-radius: 0 0 14px 14px; z-index: 50;
+    }
+    .phone-status { height: 44px; flex-shrink: 0; }
+    .phone-content { flex: 1; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; }
+    .phone-home {
+      height: 26px; flex-shrink: 0; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px;
+    }
+    .phone-home-bar { width: 120px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.15); }
+
+    /* ===== PHONE SCREENS ===== */
+    .screen { display: none; flex-direction: column; height: 100%; }
+    .screen.active { display: flex; }
+
+    /* Input screen */
+    .input-screen { padding: 16px; overflow-y: auto; }
+    .input-title { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+    .input-desc { font-size: 10px; color: var(--muted); margin-bottom: 12px; }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .field label { display: block; font-size: 10px; font-weight: 600; margin-bottom: 3px; }
+    .field input {
+      width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--text); font-size: 12px; outline: none;
+    }
+    .field input:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--muted); }
+
+    .quick-label { font-size: 9px; color: var(--muted); margin-bottom: 4px; }
+    .quick-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+    .chip {
+      padding: 3px 8px; border-radius: 999px; font-size: 9px; cursor: pointer;
+      border: 1px solid var(--border); background: none; color: var(--muted);
+      transition: all 0.15s;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--text); }
+
+    .routine-card {
+      padding: 8px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface); margin-bottom: 6px;
+    }
+    .routine-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .routine-num { font-size: 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .routine-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 12px; }
+    .routine-remove:hover { color: var(--danger); }
+    .routine-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+    .routine-fields .full { grid-column: 1 / -1; }
+    .routine-fields input { padding: 5px 8px; font-size: 11px; }
+
+    .add-btn {
+      width: 100%; padding: 8px; border-radius: 10px; border: 1px dashed var(--border);
+      background: none; color: var(--muted); font-size: 10px; cursor: pointer;
+      margin-bottom: 8px; transition: all 0.15s;
+    }
+    .add-btn:hover { border-color: var(--accent); color: var(--text); }
+
+    .generate-btn {
+      width: 100%; padding: 12px; border-radius: 14px; border: none;
+      background: var(--accent); color: white; font-size: 13px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: background 0.15s;
+    }
+    .generate-btn:hover { background: var(--accent-light); }
+    .generate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Map screen */
+    .map-topbar {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      border-bottom: 1px solid var(--border); background: var(--surface); flex-shrink: 0;
+    }
+    .map-back { background: none; border: none; color: var(--text); cursor: pointer; font-size: 14px; }
+    .map-city { font-size: 12px; font-weight: 600; }
+    .map-sub { font-size: 9px; color: var(--muted); }
+    .ai-badge {
+      margin-left: auto; padding: 2px 8px; border-radius: 999px; font-size: 8px; font-weight: 600;
+      background: rgba(99,102,241,0.1); color: var(--accent-light); border: 1px solid rgba(99,102,241,0.2);
+    }
+
+    .map-area { flex: 1; position: relative; min-height: 0; }
+    #map { position: absolute; inset: 0; }
+
+    .insight-banner {
+      position: absolute; top: 8px; left: 8px; right: 8px; z-index: 10;
+      background: rgba(20,25,38,0.95); backdrop-filter: blur(8px);
+      border: 1px solid rgba(99,102,241,0.2); border-radius: 10px; padding: 8px 10px;
+    }
+    .insight-banner p { font-size: 10px; line-height: 1.5; }
+    .insight-icon { color: var(--accent-light); margin-right: 4px; }
+
+    .bottom-sheet {
+      flex-shrink: 0; max-height: 38%; overflow-y: auto;
+      border-top: 1px solid var(--border); background: var(--surface);
+    }
+
+    .ranked-label { font-size: 9px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px 4px; }
+
+    .opp-item {
+      display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+      cursor: pointer; transition: background 0.15s; border: none; background: none; width: 100%; text-align: left; color: var(--text);
+    }
+    .opp-item:hover { background: rgba(255,255,255,0.03); }
+    .opp-score {
+      width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .opp-name { font-size: 11px; font-weight: 500; }
+    .opp-time { font-size: 9px; color: var(--muted); }
+    .opp-arrow { margin-left: auto; color: var(--muted); font-size: 10px; }
+
+    .worst-box {
+      margin: 4px 12px 8px; padding: 8px 10px; border-radius: 8px;
+      background: rgba(248,113,113,0.05);
+    }
+    .worst-label { font-size: 8px; font-weight: 600; color: var(--danger); margin-bottom: 2px; }
+    .worst-reason { font-size: 9px; color: var(--muted); line-height: 1.4; }
+
+    /* Detail panel */
+    .detail-panel {
+      display: none; padding: 12px;
+    }
+    .detail-panel.active { display: block; }
+    .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+    .detail-score-row { display: flex; align-items: center; gap: 8px; }
+    .detail-score { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: white; }
+    .detail-name { font-size: 13px; font-weight: 600; }
+    .detail-time { font-size: 9px; color: var(--muted); }
+    .detail-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; }
+
+    .detail-box {
+      padding: 8px 10px; border-radius: 8px; margin-bottom: 6px;
+      font-size: 10px; line-height: 1.5; color: var(--muted);
+    }
+    .detail-box.reasoning { background: rgba(99,102,241,0.05); border: 1px solid rgba(99,102,241,0.15); }
+    .detail-box.combo { background: rgba(52,211,153,0.05); border: 1px solid rgba(52,211,153,0.15); }
+    .detail-box.session { background: var(--phone-bg); }
+    .detail-box-label { font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 3px; }
+    .detail-box-label.accent { color: var(--accent-light); }
+    .detail-box-label.green { color: var(--success); }
+
+    .copy-row {
+      display: flex; align-items: center; gap: 6px; padding: 8px 10px;
+      border-radius: 8px; border: 1px solid var(--border);
+    }
+    .copy-text { flex: 1; font-size: 10px; font-style: italic; color: var(--muted); }
+    .copy-btn {
+      padding: 4px 10px; border-radius: 6px; border: none;
+      background: var(--accent); color: white; font-size: 9px; font-weight: 600; cursor: pointer;
+    }
+
+    /* Footer */
+    .page-footer {
+      text-align: center; padding: 32px; border-top: 1px solid var(--border); margin-top: 48px;
+    }
+    .page-footer p { font-size: 13px; color: var(--muted); }
+    .page-footer .tagline { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+
+    /* Features row */
+    .features { max-width: 900px; margin: 0 auto; padding: 0 32px 48px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .feature-card { text-align: center; padding: 20px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
+    .feature-icon { font-size: 24px; color: var(--accent-light); margin-bottom: 8px; }
+    .feature-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .feature-desc { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+    .section-title { text-align: center; font-size: 22px; font-weight: 700; margin-bottom: 6px; max-width: 900px; margin-left: auto; margin-right: auto; padding: 0 32px; }
+    .section-sub { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 28px; max-width: 900px; margin-left: auto; margin-right: auto; padding: 0 32px; }
+
+    @media (max-width: 900px) {
+      .hero-row { flex-direction: column; padding: 24px 16px; }
+      .phone { width: 100%; max-width: 375px; margin: 0 auto; }
+      .features { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="nav">
+      <a class="nav-brand" href="/" aria-label="Lodge — home">
+        <img
+          class="nav-brand-logo"
+          src="/lodge-logo.png"
+          alt="Lodge — Find your people"
+          width="200"
+          height="52"
+          decoding="async"
+        />
+      </a>
+      <a class="nav-link" href="/">Build Mode →</a>
+    </nav>
+
+    <section class="hero-row">
+      <div class="hero-copy">
+        <div class="hero-badge">♡ For adults who just moved to a new city</div>
+        <h1 class="hero-title">
+          You do everything alone.<br>
+          <span>Lodge finds where to add a person.</span>
+        </h1>
+        <p class="hero-desc">
+          Tell Lodge your weekly routines. AI analyzes your life and maps the moments where a shared ritual would stick — scored, explained, and ready to share.
+        </p>
+        <div class="stats-row">
+          <div><div class="stat-num">162K</div><div class="stat-label">die annually<br>from isolation</div></div>
+          <div><div class="stat-num">26%</div><div class="stat-label">of men have 6+<br>close friends</div></div>
+          <div><div class="stat-num">70%</div><div class="stat-label">wellness app<br>drop-off rate</div></div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-status"></div>
+          <div class="phone-content">
+
+            <!-- INPUT SCREEN -->
+            <div class="screen active" id="input-screen">
+              <div class="input-screen">
+                <div class="input-title">Your weekly routines</div>
+                <div class="input-desc">Add what you do alone. AI maps where to add a person.</div>
+
+                <div class="field-row">
+                  <div class="field"><label>Name</label><input id="f-name" placeholder="First name" /></div>
+                  <div class="field"><label>City</label><input id="f-city" placeholder="Denver, CO" /></div>
+                </div>
+
+                <div class="quick-label">Quick add:</div>
+                <div class="quick-chips" id="quick-chips"></div>
+
+                <div id="routine-list"></div>
+
+                <button class="add-btn" id="add-routine-btn">+ Add routine</button>
+                <button class="generate-btn" id="generate-btn" disabled>
+                  ◎ Generate map →
+                </button>
+              </div>
+            </div>
+
+            <!-- MAP SCREEN -->
+            <div class="screen" id="map-screen">
+              <div class="map-topbar">
+                <button class="map-back" id="map-back">‹</button>
+                <div>
+                  <div class="map-city" id="map-city"></div>
+                  <div class="map-sub" id="map-sub"></div>
+                </div>
+                <div class="ai-badge">◉ AI</div>
+              </div>
+              <div class="map-area">
+                <div id="map"></div>
+                <div class="insight-banner" id="insight-banner" style="display:none">
+                  <p><span class="insight-icon">💡</span> <span id="insight-text"></span></p>
+                </div>
+              </div>
+              <div class="bottom-sheet" id="bottom-sheet">
+                <div id="opp-list-view">
+                  <div class="ranked-label">Ranked opportunities</div>
+                  <div id="opp-list"></div>
+                  <div id="worst-section"></div>
+                </div>
+                <div class="detail-panel" id="detail-panel"></div>
+              </div>
+            </div>
+
+          </div>
+          <div class="phone-home"><div class="phone-home-bar"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <h2 class="section-title">Not a social network. Not therapy. Not a dating app.</h2>
+    <p class="section-sub">Lodge is a social opportunity engine for your existing life.</p>
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon">◉</div>
+        <div class="feature-title">Deterministic AI scoring</div>
+        <div class="feature-desc">6-factor algorithm scores your routines — no black-box GPT. Consistency, compatibility, time, location, invitation ease, relationship acceleration.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">◎</div>
+        <div class="feature-title">Map-first</div>
+        <div class="feature-desc">Your routines on a Mapbox map. Scored pins show where adding a person fits best. Tap for reasoning.</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">◇</div>
+        <div class="feature-title">Session scaffolding</div>
+        <div class="feature-desc">AI generates a game plan for your first session so it's not awkward with someone new. Activity-specific, relationship-stage-aware.</div>
+      </div>
+    </div>
+
+    <footer class="page-footer">
+      <p class="tagline">Lodge doesn't find you friends. It finds where friendship fits.</p>
+      <p>Duke MEM PM Competition 2026</p>
+    </footer>
+  </div>
+
+  <script>
+    const MAPBOX_TOKEN = window.__MAPBOX_TOKEN || "";
+
+    const QUICK_ADD = [
+      { activity: "Go to the gym", days: "Mon, Wed, Fri", time: "7:00 AM", location: "Colorado Athletic Club", duration: "1 hour" },
+      { activity: "Walk in the park", days: "Tue, Thu", time: "7:30 AM", location: "Sloan's Lake Park", duration: "45 min" },
+      { activity: "Cook dinner", days: "Sunday", time: "5:00 PM", location: "Home", duration: "2 hours" },
+      { activity: "Work from a cafe", days: "Wednesday", time: "10:00 AM", location: "Thump Coffee", duration: "3 hours" },
+      { activity: "Run errands", days: "Saturday", time: "11:00 AM", location: "Target", duration: "1.5 hours" },
+      { activity: "Trail run / hike", days: "Saturday", time: "8:00 AM", location: "Red Rocks Trail", duration: "1.5 hours" },
+    ];
+
+    let routines = [];
+    let mapInstance = null;
+
+    function scoreColor(s) {
+      if (s >= 85) return "#34D399";
+      if (s >= 70) return "#6366F1";
+      if (s >= 50) return "#FBBF24";
+      return "#F87171";
+    }
+
+    // Render quick chips
+    const chipsEl = document.getElementById("quick-chips");
+    QUICK_ADD.forEach((qa) => {
+      const btn = document.createElement("button");
+      btn.className = "chip";
+      btn.textContent = "+ " + qa.activity;
+      btn.onclick = () => addRoutine(qa);
+      chipsEl.appendChild(btn);
+    });
+
+    function addRoutine(prefill = {}) {
+      routines.push({ id: Date.now() + Math.random(), activity: prefill.activity || "", days: prefill.days || "", time: prefill.time || "", location: prefill.location || "", duration: prefill.duration || "" });
+      renderRoutines();
+    }
+
+    function removeRoutine(id) {
+      routines = routines.filter((r) => r.id !== id);
+      renderRoutines();
+    }
+
+    function renderRoutines() {
+      const list = document.getElementById("routine-list");
+      list.innerHTML = "";
+      routines.forEach((r, i) => {
+        const card = document.createElement("div");
+        card.className = "routine-card";
+        card.innerHTML = `
+          <div class="routine-header">
+            <span class="routine-num">Routine ${i + 1}</span>
+            <button class="routine-remove" data-id="${r.id}">✕</button>
+          </div>
+          <div class="routine-fields">
+            <input class="full" placeholder="What" value="${r.activity}" data-id="${r.id}" data-field="activity" />
+            <input placeholder="Days" value="${r.days}" data-id="${r.id}" data-field="days" />
+            <input placeholder="Time" value="${r.time}" data-id="${r.id}" data-field="time" />
+            <input placeholder="Where" value="${r.location}" data-id="${r.id}" data-field="location" />
+            <input placeholder="Duration" value="${r.duration}" data-id="${r.id}" data-field="duration" />
+          </div>`;
+        list.appendChild(card);
+      });
+
+      // Event listeners
+      list.querySelectorAll(".routine-remove").forEach((btn) => {
+        btn.onclick = () => removeRoutine(Number(btn.dataset.id));
+      });
+      list.querySelectorAll("input[data-id]").forEach((inp) => {
+        inp.onchange = () => {
+          const r = routines.find((x) => String(x.id) === inp.dataset.id);
+          if (r) r[inp.dataset.field] = inp.value;
+          updateGenerateBtn();
+        };
+      });
+      updateGenerateBtn();
+    }
+
+    function updateGenerateBtn() {
+      const valid = routines.filter((r) => r.activity && r.days && r.time).length;
+      const city = document.getElementById("f-city").value.trim();
+      document.getElementById("generate-btn").disabled = valid < 2 || !city;
+    }
+
+    document.getElementById("f-city").oninput = updateGenerateBtn;
+    document.getElementById("add-routine-btn").onclick = () => addRoutine();
+
+    // Generate
+    document.getElementById("generate-btn").onclick = async () => {
+      const btn = document.getElementById("generate-btn");
+      btn.disabled = true;
+      btn.textContent = "Analyzing...";
+
+      const city = document.getElementById("f-city").value.trim();
+      const name = document.getElementById("f-name").value.trim();
+      const valid = routines.filter((r) => r.activity && r.days && r.time);
+
+      try {
+        // Geocode locations
+        const geocoded = await Promise.all(valid.map(async (r) => {
+          const q = r.location === "Home" ? city : `${r.location || r.activity}, ${city}`;
+          try {
+            const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?access_token=${MAPBOX_TOKEN}&limit=1`);
+            const data = await res.json();
+            if (data.features?.length) return { ...r, lng: data.features[0].center[0], lat: data.features[0].center[1] };
+          } catch {}
+          const cityRes = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(city)}.json?access_token=${MAPBOX_TOKEN}&limit=1`);
+          const cityData = await cityRes.json();
+          const c = cityData.features?.[0]?.center || [-104.99, 39.74];
+          return { ...r, lng: c[0] + (Math.random() - 0.5) * 0.02, lat: c[1] + (Math.random() - 0.5) * 0.02 };
+        }));
+
+        // Call Social Map API
+        const res = await fetch("/api/social-map", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ routines: valid.map((r) => ({ activity: r.activity, days: r.days, time: r.time, location: r.location, duration: r.duration })), city, name }),
+        });
+        const data = await res.json();
+
+        showMapScreen(city, geocoded, data.socialMap);
+      } catch (e) {
+        alert("Failed: " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = "◎ Generate map →";
+      }
+    };
+
+    function showMapScreen(city, geocoded, socialMap) {
+      document.getElementById("input-screen").classList.remove("active");
+      document.getElementById("map-screen").classList.add("active");
+      document.getElementById("map-city").textContent = city;
+      document.getElementById("map-sub").textContent = socialMap.opportunities.length + " opportunities";
+
+      // Insight
+      if (socialMap.weekly_insight) {
+        document.getElementById("insight-banner").style.display = "";
+        document.getElementById("insight-text").textContent = socialMap.weekly_insight;
+      }
+
+      // Init Mapbox
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      const lngs = geocoded.filter((r) => r.lng).map((r) => r.lng);
+      const lats = geocoded.filter((r) => r.lat).map((r) => r.lat);
+
+      mapInstance = new mapboxgl.Map({
+        container: "map",
+        style: "mapbox://styles/mapbox/dark-v11",
+        center: [lngs.reduce((a, b) => a + b, 0) / lngs.length, lats.reduce((a, b) => a + b, 0) / lats.length],
+        zoom: 11,
+      });
+
+      mapInstance.on("load", () => {
+        socialMap.opportunities.forEach((opp) => {
+          const r = geocoded[opp.index];
+          if (!r?.lng) return;
+
+          const el = document.createElement("div");
+          el.style.cssText = "position:relative;cursor:pointer;transition:transform 0.15s;";
+          const circle = document.createElement("div");
+          circle.style.cssText = `width:42px;height:42px;border-radius:50%;background:${scoreColor(opp.score)};border:3px solid white;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;box-shadow:0 3px 12px rgba(0,0,0,0.4);`;
+          circle.textContent = opp.score;
+          const label = document.createElement("div");
+          label.style.cssText = "position:absolute;top:46px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:10px;font-weight:600;color:white;background:rgba(0,0,0,0.8);padding:2px 8px;border-radius:4px;";
+          label.textContent = opp.activity;
+          el.appendChild(circle);
+          el.appendChild(label);
+          el.onmouseenter = () => el.style.transform = "scale(1.15)";
+          el.onmouseleave = () => el.style.transform = "scale(1)";
+          el.onclick = (e) => { e.stopPropagation(); showDetail(opp, socialMap); };
+
+          new mapboxgl.Marker(el).setLngLat([r.lng, r.lat]).addTo(mapInstance);
+        });
+
+        if (lngs.length > 1) {
+          const bounds = new mapboxgl.LngLatBounds();
+          geocoded.forEach((r) => { if (r.lng && r.lat) bounds.extend([r.lng, r.lat]); });
+          mapInstance.fitBounds(bounds, { padding: 60, maxZoom: 13 });
+        }
+      });
+
+      // Render opp list
+      renderOppList(socialMap);
+    }
+
+    function renderOppList(socialMap) {
+      const list = document.getElementById("opp-list");
+      list.innerHTML = "";
+      socialMap.opportunities.forEach((opp) => {
+        const item = document.createElement("button");
+        item.className = "opp-item";
+        item.innerHTML = `
+          <div class="opp-score" style="background:${scoreColor(opp.score)}">${opp.score}</div>
+          <div><div class="opp-name">${opp.activity}</div><div class="opp-time">${opp.days} at ${opp.time}</div></div>
+          <span class="opp-arrow">→</span>`;
+        item.onclick = () => showDetail(opp, socialMap);
+        list.appendChild(item);
+      });
+
+      const worst = document.getElementById("worst-section");
+      if (socialMap.worst_candidate) {
+        worst.innerHTML = `<div class="worst-box"><div class="worst-label">↘ Skip: ${socialMap.worst_candidate.activity}</div><div class="worst-reason">${socialMap.worst_candidate.reason}</div></div>`;
+      }
+    }
+
+    function showDetail(opp, socialMap) {
+      const panel = document.getElementById("detail-panel");
+      const listView = document.getElementById("opp-list-view");
+
+      const combo = socialMap.combos?.find((c) => c.routines.includes(opp.activity));
+
+      panel.innerHTML = `
+        <div class="detail-header">
+          <div class="detail-score-row">
+            <div class="detail-score" style="background:${scoreColor(opp.score)}">${opp.score}</div>
+            <div><div class="detail-name">${opp.activity}</div><div class="detail-time">${opp.days} at ${opp.time}</div></div>
+          </div>
+          <button class="detail-close" id="detail-close">✕</button>
+        </div>
+        <div class="detail-box reasoning">
+          <div class="detail-box-label accent">◉ Why ${opp.score}/100</div>
+          ${opp.reasoning}
+        </div>
+        ${combo ? `<div class="detail-box combo"><div class="detail-box-label green">✦ Combo</div>${combo.reasoning}</div>` : ""}
+        <div class="detail-box session">
+          <div class="detail-box-label">First session</div>
+          For the first time, keep it simple and logistical. Meet at the spot, do the activity side by side. No pressure to talk the whole time — shared silence is fine for session one.
+        </div>
+        <div class="copy-row">
+          <div class="copy-text">"Hey, I already ${opp.activity.toLowerCase()} ${opp.days.toLowerCase()} at ${opp.time.toLowerCase()}. Want to come?"</div>
+          <button class="copy-btn" onclick="navigator.clipboard.writeText(this.previousElementSibling.textContent.slice(1,-1))">Copy</button>
+        </div>`;
+
+      panel.classList.add("active");
+      listView.style.display = "none";
+
+      document.getElementById("detail-close").onclick = () => {
+        panel.classList.remove("active");
+        listView.style.display = "";
+      };
+    }
+
+    // Back button
+    document.getElementById("map-back").onclick = () => {
+      document.getElementById("map-screen").classList.remove("active");
+      document.getElementById("input-screen").classList.add("active");
+      document.getElementById("detail-panel").classList.remove("active");
+      document.getElementById("opp-list-view").style.display = "";
+      if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+    };
+  </script>
+</body>
+</html>
