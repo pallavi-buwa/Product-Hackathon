@@ -1,5 +1,3 @@
-const MAPBOX_TOKEN = window.__MAPBOX_TOKEN || "";
-
 const state = {
   bootstrap: null,
   liveFeed: { stats: {}, updates: [] },
@@ -142,12 +140,45 @@ function installGlobeMarkers() {
   });
 }
 
+function mapboxToken() {
+  return String(window.__MAPBOX_TOKEN || "").trim();
+}
+
+function renderGlobeUnavailable(message) {
+  const box = elements.globeMap;
+  if (!box) {
+    return;
+  }
+  const fileProto = window.location.protocol === "file:";
+  box.innerHTML = `
+    <div class="map-unavailable globe-unavailable" role="alert">
+      <strong>Globe not loading</strong>
+      <p class="map-unavailable-lead">${message}</p>
+      <ul class="map-unavailable-list">
+        <li>Add a <code>pk.</code> Mapbox token via <code>MAPBOX_TOKEN</code> in <code>build-mode/.env</code> or export it before <code>npm start</code>.</li>
+        <li>Open the site at <strong>http://localhost:3030/</strong> from the server
+          ${fileProto ? "(not <code>file://</code>)." : "."}</li>
+      </ul>
+    </div>
+  `;
+}
+
 function installGlobe() {
-  if (!MAPBOX_TOKEN || !MAPBOX_TOKEN.startsWith("pk.") || typeof mapboxgl === "undefined") {
+  const token = mapboxToken();
+  if (!token) {
+    renderGlobeUnavailable("No Mapbox token (empty).");
+    return;
+  }
+  if (!token.startsWith("pk.")) {
+    renderGlobeUnavailable("Token must start with pk. (Mapbox public token).");
+    return;
+  }
+  if (typeof mapboxgl === "undefined") {
+    renderGlobeUnavailable("Mapbox GL JS failed to load.");
     return;
   }
 
-  mapboxgl.accessToken = MAPBOX_TOKEN;
+  mapboxgl.accessToken = token;
   state.globeMap = new mapboxgl.Map({
     container: elements.globeMap,
     style: "mapbox://styles/mapbox/satellite-v9",

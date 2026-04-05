@@ -24,17 +24,26 @@ import {
   createOpenAISilentBridgeMessageBuilder
 } from "./silentBridge.js";
 import { computeSocialHeatZones } from "./livingMapHeat.js";
+import { computeSocialHealthMetrics } from "./socialHealthScore.js";
+import {
+  buildTemplateSocialHealthNarrative,
+  createOpenAISocialHealthNarrativeBuilder
+} from "./socialHealthNarrative.js";
 
 function createDemoAiStack() {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   const templateInvite = createTemplateInvitationSynthesizer();
   const templateBlueprint = createTemplateRitualBlueprintGenerator();
 
+  const templateSocialHealth = async (ctx) =>
+    buildTemplateSocialHealthNarrative(ctx.metrics, ctx.viewerProfile);
+
   if (!apiKey) {
     return {
       invitationSynthesizer: templateInvite,
       blueprintGenerator: templateBlueprint,
       silentBridgeMessageBuilder: buildSilentBridgeMessage,
+      socialHealthNarrativeBuilder: templateSocialHealth,
       generationMode: "template"
     };
   }
@@ -42,6 +51,7 @@ function createDemoAiStack() {
   const openAiInvite = createOpenAIInvitationSynthesizer({ apiKey });
   const openAiBlueprint = createOpenAIRitualBlueprintGenerator({ apiKey });
   const openAiSilentBridge = createOpenAISilentBridgeMessageBuilder({ apiKey });
+  const openAiSocialHealth = createOpenAISocialHealthNarrativeBuilder({ apiKey });
 
   return {
     invitationSynthesizer: {
@@ -70,6 +80,14 @@ function createDemoAiStack() {
       } catch (err) {
         console.warn("[lodge-build] silent bridge AI fallback:", err.message);
         return buildSilentBridgeMessage(ctx);
+      }
+    },
+    socialHealthNarrativeBuilder: async (ctx) => {
+      try {
+        return await openAiSocialHealth(ctx);
+      } catch (err) {
+        console.warn("[lodge-build] social health narrative AI fallback:", err.message);
+        return buildTemplateSocialHealthNarrative(ctx.metrics, ctx.viewerProfile);
       }
     },
     generationMode: "openai"
@@ -222,6 +240,7 @@ export class DemoBuildModeApp {
     this.invitationSynthesizer = ai.invitationSynthesizer;
     this.blueprintGenerator = ai.blueprintGenerator;
     this.silentBridgeMessageBuilder = ai.silentBridgeMessageBuilder;
+    this.socialHealthNarrativeBuilder = ai.socialHealthNarrativeBuilder;
     this.generationMode = ai.generationMode;
     this.pulseTimer = setInterval(async () => {
       await this.ensureReady();
@@ -344,6 +363,16 @@ export class DemoBuildModeApp {
       userRoutines: this.state.userRoutines
     });
 
+    const socialHealthMetrics = computeSocialHealthMetrics({
+      viewerId: this.state.viewerId,
+      routineLogs: this.state.routineLogs,
+      now: new Date()
+    });
+    const socialHealthNarrative = await this.socialHealthNarrativeBuilder({
+      metrics: socialHealthMetrics,
+      viewerProfile: this.getProfile(this.state.viewerId)
+    });
+
     return {
       brand: this.state.brand,
       viewer: this.getProfile(this.state.viewerId),
@@ -376,6 +405,12 @@ export class DemoBuildModeApp {
           opportunityBody:
             "Not a dating score. It is compatibility-of-moment: activity overlap, social velocity, shared anchors, and routine entropy."
         }
+      },
+      privateSocialHealth: {
+        neverShared: true,
+        generationMode: this.generationMode,
+        metrics: socialHealthMetrics,
+        narrative: socialHealthNarrative
       }
     };
   }

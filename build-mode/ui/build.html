@@ -11,12 +11,14 @@
     <header class="topbar">
       <div class="topbar-inner">
         <a class="brand-home" href="/" aria-label="Go to the Lodge home page">
-          <div class="brand-lockup">
-            <div class="brand-mark">L</div>
-            <div>
-              <h1>Lodge</h1>
-            </div>
-          </div>
+          <img
+            class="brand-logo-full"
+            src="/lodge-logo.png"
+            alt="Lodge — Find your people"
+            width="220"
+            height="56"
+            decoding="async"
+          />
         </a>
         <nav class="topbar-links">
           <a href="/">Home</a>
@@ -111,6 +113,20 @@
                   <span class="optional-hint">Helps fit % on pins</span>
                 </summary>
                 <div class="optional-panel-body">
+                  <section
+                    class="social-health-card"
+                    id="social-health-card"
+                    aria-labelledby="social-health-heading"
+                  >
+                    <div class="social-health-card-head">
+                      <span class="pill pill-private">Private to you</span>
+                      <h4 id="social-health-heading">Social health</h4>
+                    </div>
+                    <p id="social-health-body" class="social-health-body"></p>
+                    <p class="social-health-footnote">
+                      Based on ritual check-ins you log. Never shown on your pin or to neighbors.
+                    </p>
+                  </section>
                   <div id="hobby-chip-field" class="chip-field"></div>
                   <div id="quick-choice-fields" class="quick-choice-stack"></div>
                   <div class="willing-scale-block">
@@ -335,6 +351,19 @@
           </div>
         </section>
       </main>
+    </div>
+
+    <div id="friend-bloom-layer" class="friend-bloom-layer" aria-hidden="true">
+      <div class="friend-bloom-glow" aria-hidden="true"></div>
+      <div class="friend-bloom-flower" role="presentation">
+        <span class="friend-bloom-petal"></span>
+        <span class="friend-bloom-petal"></span>
+        <span class="friend-bloom-petal"></span>
+        <span class="friend-bloom-petal"></span>
+        <span class="friend-bloom-petal"></span>
+        <span class="friend-bloom-petal"></span>
+        <span class="friend-bloom-core"></span>
+      </div>
     </div>
 
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>

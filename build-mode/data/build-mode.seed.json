@@ -613,8 +613,10 @@
     }
   ],
   "routineLogs": [
+    { "userId": "viewer", "occurredAt": "2026-03-27T08:00:00-04:00" },
     { "userId": "viewer", "occurredAt": "2026-04-01T08:00:00-04:00" },
     { "userId": "viewer", "occurredAt": "2026-04-03T08:05:00-04:00" },
+    { "userId": "viewer", "occurredAt": "2026-04-04T09:00:00-04:00" },
     { "userId": "maya", "occurredAt": "2026-03-03T08:12:00-05:00" },
     { "userId": "maya", "occurredAt": "2026-03-05T08:15:00-05:00" },
     { "userId": "maya", "occurredAt": "2026-03-10T08:18:00-04:00" },

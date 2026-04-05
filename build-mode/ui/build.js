@@ -1,5 +1,3 @@
-const MAPBOX_TOKEN = window.__MAPBOX_TOKEN || "";
-
 const state = {
   bootstrap: null,
   viewport: null,
@@ -29,7 +27,8 @@ const state = {
   viewerActivity: { openPosts: [], errands: [] },
   _pinTooltipTimer: null,
   _pinTooltipHideTimer: null,
-  livingMap: { heatZones: [], generationMode: "template", copy: {} }
+  livingMap: { heatZones: [], generationMode: "template", copy: {} },
+  privateSocialHealth: null
 };
 
 const elements = {
@@ -77,7 +76,10 @@ const elements = {
   conciergeThread: document.querySelector("#concierge-thread"),
   conciergeInput: document.querySelector("#concierge-input"),
   conciergeSend: document.querySelector("#concierge-send"),
-  conciergeStatus: document.querySelector("#concierge-status")
+  conciergeStatus: document.querySelector("#concierge-status"),
+  socialHealthBody: document.querySelector("#social-health-body"),
+  socialHealthCard: document.querySelector("#social-health-card"),
+  friendBloomLayer: document.querySelector("#friend-bloom-layer")
 };
 
 async function requestJson(url, options = {}) {
@@ -124,6 +126,37 @@ function heatZonesToGeoJSON(zones) {
       }
     }))
   };
+}
+
+const FRIEND_BLOOM_MS = 1400;
+
+function playFriendBloom() {
+  const layer =
+    elements.friendBloomLayer || document.getElementById("friend-bloom-layer");
+  if (!layer) {
+    return;
+  }
+
+  layer.setAttribute("aria-hidden", "false");
+  layer.classList.remove("friend-bloom-layer--active", "friend-bloom-layer--subtle");
+  void layer.offsetWidth;
+  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  const applyActive = () => {
+    if (reduced) {
+      layer.classList.add("friend-bloom-layer--subtle", "friend-bloom-layer--active");
+    } else {
+      layer.classList.add("friend-bloom-layer--active");
+    }
+  };
+  requestAnimationFrame(() => {
+    requestAnimationFrame(applyActive);
+  });
+
+  window.clearTimeout(layer._friendBloomTimer);
+  layer._friendBloomTimer = window.setTimeout(() => {
+    layer.classList.remove("friend-bloom-layer--active", "friend-bloom-layer--subtle");
+    layer.setAttribute("aria-hidden", "true");
+  }, reduced ? 520 : FRIEND_BLOOM_MS);
 }
 
 function showLiveToast(message, options = {}) {
@@ -273,6 +306,9 @@ function installSpotlight() {
   const sendSpotlightFeedback = async (helpful) => {
     try {
       await postRecommendationFeedback({ helpful, source: "spotlight" });
+      if (helpful) {
+        playFriendBloom();
+      }
       showLiveToast(helpful ? "We’ll surface more picks like that." : "We’ll weight those down.", {
         durationMs: 5000
       });
@@ -481,6 +517,7 @@ function renderNearbyEvents() {
             ? "RSVP sent — host may not see your name until 2 days before."
             : "RSVP sent — host can respond anytime."
         );
+        playFriendBloom();
       } catch (e) {
         console.error(e);
         showLiveToast(e.message || "RSVP failed");
@@ -491,6 +528,9 @@ function renderNearbyEvents() {
   elements.nearbyEventsList.querySelectorAll(".interest-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const id = btn.dataset.eventId;
+      const wasInterested = Boolean(
+        state.nearbyEvents.find((e) => e.id === id)?.youAreInterested
+      );
       try {
         const { events } = await requestJson(`/api/events/${id}/interest`, {
           method: "POST",
@@ -499,8 +539,14 @@ function renderNearbyEvents() {
         });
         state.nearbyEvents = events || [];
         state.bootstrap.nearbyEvents = state.nearbyEvents;
+        const nowInterested = Boolean(
+          state.nearbyEvents.find((e) => e.id === id)?.youAreInterested
+        );
         renderNearbyEvents();
         await refreshNeighborMatches({ fromEventInterest: true });
+        if (!wasInterested && nowInterested) {
+          playFriendBloom();
+        }
       } catch (e) {
         console.error(e);
         showLiveToast(e.message || "Could not update interest");
@@ -1100,6 +1146,19 @@ function installTrustRepeatPanel() {
   startFunFactRotator();
 }
 
+function renderPrivateSocialHealth() {
+  const block = state.bootstrap?.privateSocialHealth;
+  if (!elements.socialHealthBody || !elements.socialHealthCard) {
+    return;
+  }
+  if (!block?.narrative) {
+    elements.socialHealthCard.hidden = true;
+    return;
+  }
+  elements.socialHealthCard.hidden = false;
+  elements.socialHealthBody.textContent = block.narrative;
+}
+
 function renderErrandPresets() {
   if (!elements.errandPresetRow) {
     return;
@@ -1484,12 +1543,52 @@ async function loadDetail(postId) {
   }
 }
 
+function mapboxToken() {
+  return String(window.__MAPBOX_TOKEN || "").trim();
+}
+
+function renderMapUnavailable(message) {
+  const box = elements.mapElement;
+  if (!box) {
+    return;
+  }
+  const fileProto = window.location.protocol === "file:";
+  box.innerHTML = `
+    <div class="map-unavailable" role="alert">
+      <strong>Map not loading</strong>
+      <p class="map-unavailable-lead">${message}</p>
+      <ul class="map-unavailable-list">
+        <li>Use a <strong>Mapbox public token</strong> that starts with <code>pk.</code> from
+          <a href="https://account.mapbox.com/access-tokens/" target="_blank" rel="noopener">Mapbox access tokens</a>
+          — not an OpenAI key.</li>
+        <li>Set <code>MAPBOX_TOKEN</code> in <code>build-mode/.env</code> or run
+          <code>export MAPBOX_TOKEN=pk.…</code> in the same terminal, then <code>npm start</code>.</li>
+        <li>Open <strong>http://localhost:3030/build</strong> after starting the server
+          ${fileProto ? "(you are on <code>file://</code> — use the local server URL instead)." : "."}</li>
+        <li>Restart the Node server after changing the token.</li>
+      </ul>
+    </div>
+  `;
+}
+
 function installMapboxMap() {
-  if (!MAPBOX_TOKEN || !MAPBOX_TOKEN.startsWith("pk.") || typeof mapboxgl === "undefined") {
+  const token = mapboxToken();
+  if (!token) {
+    renderMapUnavailable("No Mapbox token was sent to this page (empty <code>MAPBOX_TOKEN</code>).");
+    return;
+  }
+  if (!token.startsWith("pk.")) {
+    renderMapUnavailable(
+      "Your token must start with <code>pk.</code> (Mapbox public token). Secret keys or other prefixes will not work here."
+    );
+    return;
+  }
+  if (typeof mapboxgl === "undefined") {
+    renderMapUnavailable("Mapbox GL JS did not load (network blocked or script error). Check the browser console.");
     return;
   }
 
-  mapboxgl.accessToken = MAPBOX_TOKEN;
+  mapboxgl.accessToken = token;
   state.map = new mapboxgl.Map({
     container: elements.mapElement,
     style: "mapbox://styles/mapbox/light-v11",
@@ -1717,10 +1816,12 @@ async function initialize() {
   state.viewerActivity = state.bootstrap.viewerActivity || { openPosts: [], errands: [] };
   state.rsvpInbox = state.bootstrap.rsvpInbox || [];
   state.livingMap = state.bootstrap.livingMap || state.livingMap;
+  state.privateSocialHealth = state.bootstrap.privateSocialHealth || null;
 
   elements.workspaceTitle.textContent =
     state.bootstrap.brand?.promise || "Browse routines around you and post your own anchor.";
 
+  renderPrivateSocialHealth();
   installComposer();
   installTrustRepeatPanel();
   renderRsvpInbox();
