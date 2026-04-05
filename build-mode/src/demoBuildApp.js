@@ -204,37 +204,6 @@ function expandGlobeSignals(signals = []) {
   });
 }
 
-function clampLat(lat) {
-  return Math.max(-84, Math.min(84, lat));
-}
-
-function wrapLng(lng) {
-  let value = lng;
-  while (value > 180) value -= 360;
-  while (value < -180) value += 360;
-  return value;
-}
-
-function expandGlobeSignals(signals = []) {
-  const offsets = [
-    { lat: 0, lng: 0 },
-    { lat: 0.82, lng: 1.26 },
-    { lat: -0.94, lng: -1.18 },
-    { lat: 0.58, lng: -1.44 }
-  ];
-
-  return signals.flatMap((signal, index) => {
-    const scale = 0.55 + (index % 4) * 0.18;
-    return offsets.map((offset, variant) => ({
-      id: `${signal.id}-${variant}`,
-      label: signal.label,
-      subtitle: signal.subtitle,
-      lat: clampLat(signal.lat + offset.lat * scale),
-      lng: wrapLng(signal.lng + offset.lng * scale)
-    }));
-  });
-}
-
 function stablePravatarImg(id) {
   const s = String(id || "anon");
   let h = 0;
@@ -312,7 +281,7 @@ export class DemoBuildModeApp {
 
       const spotlight =
         this.state.activeIntentions[
-          Math.floor(Math.random() * this.state.activeIntentions.length)
+        Math.floor(Math.random() * this.state.activeIntentions.length)
         ];
       this.publishUpdate({
         kind: "pulse",
@@ -599,11 +568,11 @@ export class DemoBuildModeApp {
       const errands =
         id === viewerId
           ? (this.state.viewerErrands || []).map((e) => ({
-              id: e.id,
-              label: e.label,
-              errandKey: e.errandKey,
-              loggedAt: e.windowStart || e.createdAt
-            }))
+            id: e.id,
+            label: e.label,
+            errandKey: e.errandKey,
+            loggedAt: e.windowStart || e.createdAt
+          }))
           : logs.filter((l) => l.userId === id);
 
       out[id] = {
@@ -620,10 +589,10 @@ export class DemoBuildModeApp {
               : "Save profile signals to see fit scores.",
         openRitual: open
           ? {
-              label: open.label,
-              localSpotName: open.localSpotName,
-              startTimeLabel: startTimeLabel(open.startTime)
-            }
+            label: open.label,
+            localSpotName: open.localSpotName,
+            startTimeLabel: startTimeLabel(open.startTime)
+          }
           : null,
         errands: errands.map((e) => ({
           id: e.id,
@@ -1137,12 +1106,12 @@ export class DemoBuildModeApp {
       contextTags: Array.isArray(payload.contextTags)
         ? payload.contextTags
         : String(
-            payload.contextTags ||
-              (this.state.composerDefaults?.contextTags || []).join(", ")
-          )
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean),
+          payload.contextTags ||
+          (this.state.composerDefaults?.contextTags || []).join(", ")
+        )
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
       status: "open",
       createdAt: new Date().toISOString()
     };
