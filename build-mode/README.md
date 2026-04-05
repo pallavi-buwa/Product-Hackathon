@@ -36,6 +36,13 @@ Then open:
 http://localhost:3030
 ```
 
+Pages:
+
+```text
+/        landing page
+/build   BUILD workspace
+```
+
 ## Other Commands
 
 ```powershell

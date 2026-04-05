@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lodge BUILD Workspace</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <div class="brand-mark">L</div>
+          <div>
+            <p class="eyebrow">Lodge</p>
+            <h1>BUILD Workspace</h1>
+          </div>
+        </div>
+        <nav class="topbar-links">
+          <a href="/">Landing</a>
+          <a href="/build">Workspace</a>
+        </nav>
+      </header>
+
+      <main class="build-page-main">
+        <section class="workspace reveal" id="build-app">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">Interactive BUILD Workspace</p>
+              <h3 id="workspace-title">Browse routines around you and post your own anchor.</h3>
+            </div>
+            <div class="section-status">
+              <span id="viewport-label">Current area</span>
+              <span id="post-count-label">0 posts nearby</span>
+            </div>
+          </div>
+
+          <div class="workspace-grid">
+            <aside class="card composer-card" id="composer">
+              <div class="card-header">
+                <div>
+                  <p class="eyebrow">Create a post</p>
+                  <h4>Start a low-pressure ritual</h4>
+                </div>
+                <span class="pill">Uses current map center</span>
+              </div>
+
+              <form id="composer-form">
+                <label>
+                  Label
+                  <input name="label" type="text" required />
+                </label>
+
+                <div class="split-fields">
+                  <label>
+                    Routine
+                    <select name="type" id="routine-type-select"></select>
+                  </label>
+
+                  <label>
+                    Group size
+                    <input name="desiredGroupSize" type="number" min="1" max="4" />
+                  </label>
+                </div>
+
+                <div class="split-fields">
+                  <label>
+                    Start time
+                    <input name="startTime" type="datetime-local" required />
+                  </label>
+
+                  <label>
+                    Duration
+                    <input name="durationMinutes" type="number" min="15" max="180" />
+                  </label>
+                </div>
+
+                <div class="split-fields">
+                  <label>
+                    Spot name
+                    <input name="localSpotName" type="text" required />
+                  </label>
+
+                  <label>
+                    Weekly cadence
+                    <input name="cadencePerWeek" type="number" min="1" max="7" />
+                  </label>
+                </div>
+
+                <label>
+                  Context tags
+                  <input
+                    name="contextTags"
+                    type="text"
+                    placeholder="walk, coffee, market"
+                  />
+                </label>
+
+                <button class="primary-button wide-button" type="submit">
+                  Publish and generate blueprint
+                </button>
+              </form>
+            </aside>
+
+            <section class="card map-card">
+              <div class="card-header">
+                <div>
+                  <p class="eyebrow">Routine map</p>
+                  <h4>Move around to find nearby posts</h4>
+                </div>
+                <div class="map-controls">
+                  <button class="map-button" id="zoom-in" type="button">+</button>
+                  <button class="map-button" id="zoom-out" type="button">-</button>
+                </div>
+              </div>
+
+              <div class="map-shell">
+                <canvas id="map-canvas" aria-label="Interactive neighborhood map"></canvas>
+                <div class="map-legend">
+                  <span><i class="marker marker-live"></i> Open ritual</span>
+                  <span><i class="marker marker-you"></i> Your post</span>
+                </div>
+                <div class="map-hint">
+                  Drag to pan. Scroll to zoom. Click a marker to open its blueprint.
+                </div>
+              </div>
+            </section>
+
+            <aside class="sidebar-stack">
+              <section class="card list-card">
+                <div class="card-header">
+                  <div>
+                    <p class="eyebrow">Nearby posts</p>
+                    <h4>Live anchors in view</h4>
+                  </div>
+                </div>
+                <div class="post-list" id="post-list"></div>
+              </section>
+
+              <section class="card detail-card" id="detail-panel">
+                <div class="card-header">
+                  <div>
+                    <p class="eyebrow">Blueprint</p>
+                    <h4 id="detail-title">Select a post to inspect the ritual plan</h4>
+                  </div>
+                </div>
+                <div id="detail-body" class="detail-body">
+                  <p class="empty-state">
+                    The selected post will show its generated ritual blueprint, top routine
+                    matches, and silent bridge nudges here.
+                  </p>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/build.js"></script>
+  </body>
+</html>

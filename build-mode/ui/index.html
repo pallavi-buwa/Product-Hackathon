@@ -17,14 +17,13 @@
           </div>
         </div>
         <nav class="topbar-links">
-          <a href="#build-app">Map</a>
-          <a href="#composer">Create</a>
-          <a href="#detail-panel">Blueprints</a>
+          <a href="/">Home</a>
+          <a href="/build">Open Workspace</a>
         </nav>
       </header>
 
       <main>
-        <section class="hero">
+        <section class="hero landing-hero">
           <div class="hero-copy reveal">
             <p class="eyebrow">Build Mode Only</p>
             <h2 id="hero-title">Turn familiar solo routines into something shared.</h2>
@@ -32,7 +31,7 @@
               Lodge helps you post the quiet things you already do.
             </p>
             <div class="hero-actions">
-              <a class="primary-button" href="#build-app">Open the live map</a>
+              <a class="primary-button" href="/build">Open the live map</a>
               <button class="ghost-button" id="focus-featured" type="button">
                 Jump to a live ritual
               </button>
@@ -60,140 +59,37 @@
           </div>
         </section>
 
-        <section class="workspace reveal" id="build-app">
-          <div class="section-header">
-            <div>
-              <p class="eyebrow">Interactive BUILD Workspace</p>
-              <h3>Browse routines around you, pan the map, and post your own anchor.</h3>
-            </div>
-            <div class="section-status">
-              <span id="viewport-label">Downtown Indianapolis</span>
-              <span id="post-count-label">0 posts nearby</span>
-            </div>
-          </div>
+        <section class="feature-grid reveal">
+          <article class="card feature-card">
+            <p class="eyebrow">1. Post</p>
+            <h4>Share the routine you already keep.</h4>
+            <p>
+              Morning walks, market stops, workouts, studio loops. BUILD starts with
+              ordinary rituals, not awkward networking events.
+            </p>
+          </article>
 
-          <div class="workspace-grid">
-            <aside class="card composer-card" id="composer">
-              <div class="card-header">
-                <div>
-                  <p class="eyebrow">Create a post</p>
-                  <h4>Start a low-pressure ritual</h4>
-                </div>
-                <span class="pill">Uses current map center</span>
-              </div>
+          <article class="card feature-card">
+            <p class="eyebrow">2. Match</p>
+            <h4>Rank nearby routine neighbors.</h4>
+            <p>
+              The backend scores route overlap, timing, cadence, entropy, and social
+              friction so the matches feel sustainable.
+            </p>
+          </article>
 
-              <form id="composer-form">
-                <label>
-                  Label
-                  <input name="label" type="text" required />
-                </label>
-
-                <div class="split-fields">
-                  <label>
-                    Routine
-                    <select name="type" id="routine-type-select"></select>
-                  </label>
-
-                  <label>
-                    Group size
-                    <input name="desiredGroupSize" type="number" min="1" max="4" />
-                  </label>
-                </div>
-
-                <div class="split-fields">
-                  <label>
-                    Start time
-                    <input name="startTime" type="datetime-local" required />
-                  </label>
-
-                  <label>
-                    Duration
-                    <input name="durationMinutes" type="number" min="15" max="180" value="40" />
-                  </label>
-                </div>
-
-                <div class="split-fields">
-                  <label>
-                    Spot name
-                    <input name="localSpotName" type="text" required />
-                  </label>
-
-                  <label>
-                    Weekly cadence
-                    <input name="cadencePerWeek" type="number" min="1" max="7" />
-                  </label>
-                </div>
-
-                <label>
-                  Context tags
-                  <input
-                    name="contextTags"
-                    type="text"
-                    placeholder="walk, coffee, market"
-                  />
-                </label>
-
-                <button class="primary-button wide-button" type="submit">
-                  Publish and generate blueprint
-                </button>
-              </form>
-            </aside>
-
-            <section class="card map-card">
-              <div class="card-header">
-                <div>
-                  <p class="eyebrow">Routine map</p>
-                  <h4>Move around to find nearby posts</h4>
-                </div>
-                <div class="map-controls">
-                  <button class="map-button" id="zoom-in" type="button">+</button>
-                  <button class="map-button" id="zoom-out" type="button">-</button>
-                </div>
-              </div>
-
-              <div class="map-shell">
-                <canvas id="map-canvas" aria-label="Interactive neighborhood map"></canvas>
-                <div class="map-legend">
-                  <span><i class="marker marker-live"></i> Open ritual</span>
-                  <span><i class="marker marker-you"></i> Your post</span>
-                </div>
-                <div class="map-hint">
-                  Drag to pan. Scroll to zoom. Click a marker to open its blueprint.
-                </div>
-              </div>
-            </section>
-
-            <aside class="sidebar-stack">
-              <section class="card list-card">
-                <div class="card-header">
-                  <div>
-                    <p class="eyebrow">Nearby posts</p>
-                    <h4>Live anchors in view</h4>
-                  </div>
-                </div>
-                <div class="post-list" id="post-list"></div>
-              </section>
-
-              <section class="card detail-card" id="detail-panel">
-                <div class="card-header">
-                  <div>
-                    <p class="eyebrow">Blueprint</p>
-                    <h4 id="detail-title">Select a post to inspect the ritual plan</h4>
-                  </div>
-                </div>
-                <div id="detail-body" class="detail-body">
-                  <p class="empty-state">
-                    The selected post will show its generated ritual blueprint, top routine
-                    matches, and silent bridge nudges here.
-                  </p>
-                </div>
-              </section>
-            </aside>
-          </div>
+          <article class="card feature-card">
+            <p class="eyebrow">3. Nudge</p>
+            <h4>Make the invite feel easy.</h4>
+            <p>
+              Invitation copy and silent bridge nudges keep it logistical and low-pressure
+              instead of making it feel like friend-dating.
+            </p>
+          </article>
         </section>
       </main>
     </div>
 
-    <script type="module" src="/app.js"></script>
+    <script type="module" src="/landing.js"></script>
   </body>
 </html>

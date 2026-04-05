@@ -65,6 +65,18 @@ async function serveStaticFile(response, relativePath = "index.html") {
   return true;
 }
 
+function getPagePath(pathname) {
+  if (pathname === "/" || pathname === "/index.html") {
+    return "index.html";
+  }
+
+  if (pathname === "/build" || pathname === "/build/" || pathname === "/build.html") {
+    return "build.html";
+  }
+
+  return pathname.slice(1);
+}
+
 export function createServer({ port = 3030 } = {}) {
   const baseUrl = `http://localhost:${port}`;
   const app = new DemoBuildModeApp({ baseUrl });
@@ -129,13 +141,16 @@ export function createServer({ port = 3030 } = {}) {
       }
 
       if (request.method === "GET") {
-        const requestedPath = pathname === "/" ? "index.html" : pathname.slice(1);
+        const requestedPath = getPagePath(pathname);
         const served = await serveStaticFile(response, requestedPath);
         if (served) {
           return;
         }
 
-        const fallback = await readFile(path.join(uiDir, "index.html"), "utf-8");
+        const fallbackPage = pathname.startsWith("/build")
+          ? "build.html"
+          : "index.html";
+        const fallback = await readFile(path.join(uiDir, fallbackPage), "utf-8");
         response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
         response.end(fallback);
         return;
