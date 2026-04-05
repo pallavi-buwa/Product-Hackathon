@@ -1405,10 +1405,16 @@ function postCardMarkup(post) {
   `;
 }
 
+const MASCOT_IMG_EMPTY = `<span class="lodge-mascot-wrap lodge-mascot-wrap--inline" aria-hidden="true">
+  <img class="lodge-mascot-img" src="/lodge-mascot.svg" width="48" height="48" alt="" decoding="async" />
+</span>`;
+
 function renderPostList() {
   if (!state.posts.length) {
-    elements.postList.innerHTML =
-      '<p class="empty-state map-posts-empty">Pan the map or publish a ritual — open posts show here in a row.</p>';
+    elements.postList.innerHTML = `<div class="map-posts-empty-with-mascot" role="presentation">
+      ${MASCOT_IMG_EMPTY}
+      <p class="empty-state map-posts-empty">Pan the map or publish a ritual — open posts show here in a row.</p>
+    </div>`;
     return;
   }
 

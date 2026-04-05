@@ -176,6 +176,178 @@ a {
   padding: 18px 10px 18px 0;
 }
 
+/* Soft brand blobs behind landing headline (SaaS-style atmosphere) */
+.hero-headline-stack {
+  position: relative;
+  isolation: isolate;
+  margin-bottom: 0;
+}
+
+.hero-blobs {
+  position: absolute;
+  z-index: 0;
+  inset: -12% -18% -28% -14%;
+  min-height: 120%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.hero-blob {
+  position: absolute;
+  width: clamp(200px, 48vw, 380px);
+  height: clamp(180px, 42vw, 340px);
+  border-radius: 58% 42% 62% 38% / 48% 55% 45% 52%;
+  opacity: 0.85;
+  filter: blur(56px);
+  transform: translateZ(0);
+}
+
+.hero-blob--sage {
+  top: -8%;
+  left: -18%;
+  background: color-mix(in srgb, var(--primary) 42%, transparent);
+  transform: rotate(-14deg) scale(1.05);
+}
+
+.hero-blob--gold {
+  top: 18%;
+  right: -22%;
+  width: clamp(220px, 52vw, 400px);
+  height: clamp(200px, 46vw, 360px);
+  border-radius: 42% 58% 48% 52% / 58% 42% 55% 45%;
+  background: color-mix(in srgb, var(--accent) 50%, transparent);
+  transform: rotate(22deg) scale(1.02);
+}
+
+.hero-blob--clay {
+  bottom: -32%;
+  left: 8%;
+  width: clamp(240px, 55vw, 420px);
+  height: clamp(200px, 44vw, 320px);
+  border-radius: 52% 48% 40% 60% / 45% 52% 48% 55%;
+  background: color-mix(in srgb, var(--secondary) 45%, transparent);
+  transform: rotate(8deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-blob {
+    filter: blur(40px);
+    opacity: 0.68;
+  }
+}
+
+.hero-headline-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Tiny flower mascot — light touch, respects reduced motion */
+.hero-mascot-slot {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  z-index: 2;
+  opacity: 0.94;
+  pointer-events: none;
+}
+
+@media (min-width: 1181px) {
+  .hero-mascot-slot {
+    right: min(8%, 72px);
+  }
+}
+
+.lodge-mascot-img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+}
+
+.lodge-mascot-wrap {
+  display: inline-block;
+  transform-origin: 62% 88%;
+  will-change: transform;
+}
+
+.lodge-mascot-wrap--hero .lodge-mascot-img {
+  width: 56px;
+  height: 56px;
+}
+
+.lodge-mascot-wrap--inline .lodge-mascot-img {
+  width: 44px;
+  height: 44px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lodge-mascot-wrap--hero {
+    animation: lodge-mascot-wave 3.2s ease-in-out infinite;
+  }
+
+  .lodge-mascot-wrap--inline {
+    animation: lodge-mascot-wave-soft 2.8s ease-in-out infinite;
+  }
+}
+
+@keyframes lodge-mascot-wave {
+  0%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  35% {
+    transform: rotate(7deg) translateY(-1px);
+  }
+  65% {
+    transform: rotate(-5deg) translateY(0);
+  }
+}
+
+@keyframes lodge-mascot-wave-soft {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lodge-mascot-wrap {
+    animation: none !important;
+  }
+}
+
+.map-posts-empty-with-mascot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 8px 18px;
+  text-align: center;
+}
+
+.map-posts-empty-with-mascot .map-posts-empty {
+  margin: 0;
+  max-width: 36ch;
+}
+
+@media (max-width: 720px) {
+  .hero-headline-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-mascot-slot {
+    position: static;
+    order: -1;
+    align-self: flex-end;
+    margin: 0 0 6px;
+  }
+}
+
 .hero-copy h2 {
   font-size: clamp(2.9rem, 5vw, 4.9rem);
   line-height: 0.98;
@@ -1994,6 +2166,15 @@ a {
 
   .hero-copy h2 {
     font-size: 2.65rem;
+  }
+
+  .hero-blobs {
+    inset: -4% -6% -18% -4%;
+  }
+
+  .hero-blob {
+    filter: blur(48px);
+    opacity: 0.78;
   }
 
   .globe-card {
