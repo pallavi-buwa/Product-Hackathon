@@ -44,7 +44,18 @@
       "homeCity": "Indianapolis",
       "socialEnergyLevel": "steady",
       "preferredGroupSize": 2,
-      "interests": ["walk", "coffee", "design"]
+      "interests": ["walk", "coffee", "design"],
+      "hobbies": ["photography", "indie radio"],
+      "thirdPlaces": ["Highland Park Bridge", "Canal Walk"],
+      "eventsAttended": 2,
+      "willingToAttendMore": 4,
+      "onboardingHints": {},
+      "originNote": "Indy local — building Lodge with neighbors",
+      "recommendationPreferences": {
+        "venueScores": {},
+        "tagHits": {},
+        "netScore": 0
+      }
     },
     {
       "id": "maya",
@@ -52,7 +63,12 @@
       "homeCity": "Indianapolis",
       "socialEnergyLevel": "steady",
       "preferredGroupSize": 2,
-      "interests": ["coffee", "walk", "sunrise"]
+      "interests": ["coffee", "walk", "sunrise"],
+      "hobbies": ["90s jazz", "ceramics"],
+      "thirdPlaces": ["Canal Walk", "City Market"],
+      "eventsAttended": 5,
+      "willingToAttendMore": 5,
+      "originNote": "Oaxaca → US · sunrise coffee on the canal"
     },
     {
       "id": "noah",
@@ -61,7 +77,12 @@
       "socialEnergyLevel": "high",
       "preferredGroupSize": 3,
       "maxSharedRitualsPerWeek": 6,
-      "interests": ["gym", "fitness", "smoothies"]
+      "interests": ["gym", "fitness", "smoothies"],
+      "hobbies": ["pickup basketball", "meal prep"],
+      "thirdPlaces": ["Mass Ave Studio", "White River Trail"],
+      "eventsAttended": 8,
+      "willingToAttendMore": 5,
+      "originNote": "Chicago suburbs · gym before sunrise"
     },
     {
       "id": "priya",
@@ -69,7 +90,12 @@
       "homeCity": "Indianapolis",
       "socialEnergyLevel": "steady",
       "preferredGroupSize": 2,
-      "interests": ["walk", "books", "tea"]
+      "interests": ["walk", "books", "tea"],
+      "hobbies": ["library mornings", "poetry"],
+      "thirdPlaces": ["Highland Park Bridge", "City Market"],
+      "eventsAttended": 3,
+      "willingToAttendMore": 4,
+      "originNote": "Chennai → Indy · tea and poetry walks"
     },
     {
       "id": "elena",
@@ -77,7 +103,12 @@
       "homeCity": "Indianapolis",
       "socialEnergyLevel": "low",
       "preferredGroupSize": 2,
-      "interests": ["market", "cooking", "coffee"]
+      "interests": ["market", "cooking", "coffee"],
+      "hobbies": ["fermentation", "farmers markets"],
+      "thirdPlaces": ["City Market", "Canal Walk"],
+      "eventsAttended": 4,
+      "willingToAttendMore": 3,
+      "originNote": "Madrid · Indy via Austin · market regular"
     },
     {
       "id": "marcus",
@@ -85,7 +116,12 @@
       "homeCity": "Indianapolis",
       "socialEnergyLevel": "steady",
       "preferredGroupSize": 2,
-      "interests": ["run", "trail", "brunch"]
+      "interests": ["run", "trail", "brunch"],
+      "hobbies": ["trail maps", "cold brew"],
+      "thirdPlaces": ["White River Trail", "Mass Ave Studio"],
+      "eventsAttended": 6,
+      "willingToAttendMore": 4,
+      "originNote": "Detroit · river miles & cold brew"
     },
     {
       "id": "zoe",
@@ -93,7 +129,220 @@
       "homeCity": "Indianapolis",
       "socialEnergyLevel": "steady",
       "preferredGroupSize": 3,
-      "interests": ["ceramics", "market", "walking"]
+      "interests": ["ceramics", "market", "walking"],
+      "hobbies": ["clay studio", "vinyl"],
+      "thirdPlaces": ["Mass Ave Studio", "City Market"],
+      "eventsAttended": 7,
+      "willingToAttendMore": 5,
+      "originNote": "Seoul + Indy since grad school · clay studio"
+    },
+    {
+      "id": "sam",
+      "firstName": "Sam",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 2,
+      "interests": ["coffee", "coding", "dogs"],
+      "hobbies": ["latte art", "board games"],
+      "thirdPlaces": ["Canal Walk", "Highland Park Bridge"],
+      "eventsAttended": 4,
+      "willingToAttendMore": 4,
+      "originNote": "Nairobi → Midwest · latte art & dogs"
+    },
+    {
+      "id": "jules",
+      "firstName": "Jules",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "high",
+      "preferredGroupSize": 3,
+      "interests": ["live music", "cycling", "film"],
+      "hobbies": ["90s jazz", "night rides"],
+      "thirdPlaces": ["Mass Ave Studio", "Canal Walk"],
+      "eventsAttended": 12,
+      "willingToAttendMore": 5,
+      "originNote": "Montréal · film & golden-hour rides"
+    },
+    {
+      "id": "riley",
+      "firstName": "Riley",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "low",
+      "preferredGroupSize": 2,
+      "interests": ["reading", "tea", "quiet walks"],
+      "hobbies": ["library mornings", "journaling"],
+      "thirdPlaces": ["City Market", "Highland Park Bridge"],
+      "eventsAttended": 1,
+      "willingToAttendMore": 2,
+      "originNote": "Small-town Indiana · quiet Saturdays"
+    },
+    {
+      "id": "casey",
+      "firstName": "Casey",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 3,
+      "interests": ["parks", "coffee", "playgrounds"],
+      "hobbies": ["stroller miles", "podcasts"],
+      "thirdPlaces": ["Highland Park Bridge", "Canal Walk"],
+      "eventsAttended": 2,
+      "willingToAttendMore": 3,
+      "originNote": "Manila → Indy · park loops with kiddo"
+    },
+    {
+      "id": "omar",
+      "firstName": "Omar",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "low",
+      "preferredGroupSize": 2,
+      "interests": ["night shift", "quiet gym", "meal boxes"],
+      "hobbies": ["audiobooks", "stretching"],
+      "thirdPlaces": ["Mass Ave Studio", "White River Trail"],
+      "eventsAttended": 1,
+      "willingToAttendMore": 2,
+      "originNote": "Amman · night-shift gym regular"
+    },
+    {
+      "id": "alex",
+      "firstName": "Alex",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "high",
+      "preferredGroupSize": 4,
+      "interests": ["pickup sports", "brunch", "live music"],
+      "hobbies": ["open mic", "climbing"],
+      "thirdPlaces": ["Mass Ave Studio", "City Market"],
+      "eventsAttended": 9,
+      "willingToAttendMore": 5,
+      "originNote": "São Paulo · pickup games & open mic"
+    },
+    {
+      "id": "taylor",
+      "firstName": "Taylor",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 2,
+      "interests": ["remote work", "coworking", "walk breaks"],
+      "hobbies": ["specialty coffee", "board games"],
+      "thirdPlaces": ["Canal Walk", "City Market"],
+      "eventsAttended": 3,
+      "willingToAttendMore": 4,
+      "originNote": "Twin Cities → remote here · cowork breaks"
+    },
+    {
+      "id": "fatima",
+      "firstName": "Fatima",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 2,
+      "interests": ["tea", "calligraphy", "community gardens"],
+      "hobbies": ["Arabic poetry nights", "baking"],
+      "thirdPlaces": ["Canal Walk", "City Market"],
+      "eventsAttended": 4,
+      "willingToAttendMore": 4,
+      "originNote": "Casablanca → Midwest 6 yrs"
+    },
+    {
+      "id": "diego",
+      "firstName": "Diego",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "high",
+      "preferredGroupSize": 3,
+      "interests": ["salsa", "soccer", "street food"],
+      "hobbies": ["language exchange", "vinyl"],
+      "thirdPlaces": ["City Market", "Mass Ave Studio"],
+      "eventsAttended": 7,
+      "willingToAttendMore": 5,
+      "originNote": "Bogotá · hosts informal Spanish chat walks"
+    },
+    {
+      "id": "amara",
+      "firstName": "Amara",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 2,
+      "interests": ["jazz", "fiction", "farmers markets"],
+      "hobbies": ["injera brunches", "film club"],
+      "thirdPlaces": ["City Market", "Highland Park Bridge"],
+      "eventsAttended": 5,
+      "willingToAttendMore": 4,
+      "originNote": "Addis → Indy · slow weekend markets"
+    },
+    {
+      "id": "yuki",
+      "firstName": "Yuki",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "low",
+      "preferredGroupSize": 2,
+      "interests": ["cycling", "matcha", "photography"],
+      "hobbies": ["indie film", "onsen-style baths at home"],
+      "thirdPlaces": ["White River Trail", "Canal Walk"],
+      "eventsAttended": 2,
+      "willingToAttendMore": 3,
+      "originNote": "Osaka · quiet trail miles"
+    },
+    {
+      "id": "kwame",
+      "firstName": "Kwame",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 3,
+      "interests": ["afrobeats", "pickup football", "coffee"],
+      "hobbies": ["DJ sets", "mentoring"],
+      "thirdPlaces": ["Mass Ave Studio", "Canal Walk"],
+      "eventsAttended": 10,
+      "willingToAttendMore": 5,
+      "originNote": "Accra · Mass Ave studio nights"
+    },
+    {
+      "id": "lin",
+      "firstName": "Lin",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 2,
+      "interests": ["badminton", "bubble tea", "board games"],
+      "hobbies": ["language exchange", "K-drama clubs"],
+      "thirdPlaces": ["City Market", "Canal Walk"],
+      "eventsAttended": 4,
+      "willingToAttendMore": 4,
+      "originNote": "Guangzhou → Indy · weekend market snacks"
+    },
+    {
+      "id": "anand",
+      "firstName": "Anand",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 2,
+      "interests": ["cricket", "chai", "tech meetups"],
+      "hobbies": ["carnatic playlists", "chess in the park"],
+      "thirdPlaces": ["Highland Park Bridge", "White River Trail"],
+      "eventsAttended": 3,
+      "willingToAttendMore": 3,
+      "originNote": "Mumbai area → US Midwest"
+    },
+    {
+      "id": "mei",
+      "firstName": "Mei",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "low",
+      "preferredGroupSize": 2,
+      "interests": ["illustration", "night markets", "oolong"],
+      "hobbies": ["zine swaps", "urban sketching"],
+      "thirdPlaces": ["Mass Ave Studio", "City Market"],
+      "eventsAttended": 2,
+      "willingToAttendMore": 3,
+      "originNote": "Taipei · soft studio strolls"
+    },
+    {
+      "id": "sofia",
+      "firstName": "Sofia",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "high",
+      "preferredGroupSize": 4,
+      "interests": ["folk dancing", "hiking", "wine tastings"],
+      "hobbies": ["choir", "EU football watch parties"],
+      "thirdPlaces": ["White River Trail", "City Market"],
+      "eventsAttended": 6,
+      "willingToAttendMore": 5,
+      "originNote": "Sofia, Bulgaria · loves group trail days"
     }
   ],
   "userRoutines": [
@@ -165,6 +414,183 @@
       "cadencePerWeek": 1
     },
     {
+      "id": "routine-sam",
+      "userId": "sam",
+      "type": "coffee_run",
+      "label": "Laptop + latte block",
+      "daysOfWeek": ["monday", "wednesday", "friday"],
+      "timeWindow": { "start": "09:00", "end": "11:30" },
+      "locationCoords": { "lat": 39.7691, "lng": -86.1612 },
+      "routineTags": ["coffee", "work", "canal"],
+      "cadencePerWeek": 3
+    },
+    {
+      "id": "routine-jules",
+      "userId": "jules",
+      "type": "river_run",
+      "label": "Sunset river ride",
+      "daysOfWeek": ["tuesday", "thursday"],
+      "timeWindow": { "start": "18:30", "end": "19:30" },
+      "locationCoords": { "lat": 39.7742, "lng": -86.1714 },
+      "routineTags": ["cycling", "trail", "music"],
+      "cadencePerWeek": 2
+    },
+    {
+      "id": "routine-riley",
+      "userId": "riley",
+      "type": "morning_walk",
+      "label": "Quiet library walk",
+      "daysOfWeek": ["saturday"],
+      "timeWindow": { "start": "10:00", "end": "11:00" },
+      "locationCoords": { "lat": 39.7649, "lng": -86.1462 },
+      "routineTags": ["walk", "books", "tea"],
+      "cadencePerWeek": 1
+    },
+    {
+      "id": "routine-casey",
+      "userId": "casey",
+      "type": "morning_walk",
+      "label": "Park loop + coffee",
+      "daysOfWeek": ["tuesday", "thursday", "saturday"],
+      "timeWindow": { "start": "09:30", "end": "10:15" },
+      "locationCoords": { "lat": 39.7688, "lng": -86.1584 },
+      "anchorPoints": [{ "lat": 39.7691, "lng": -86.1612 }],
+      "routineTags": ["walk", "park", "coffee"],
+      "cadencePerWeek": 3
+    },
+    {
+      "id": "routine-omar",
+      "userId": "omar",
+      "type": "gym_session",
+      "label": "Late quiet lift",
+      "daysOfWeek": ["monday", "wednesday", "friday"],
+      "timeWindow": { "start": "21:00", "end": "22:00" },
+      "locationCoords": { "lat": 39.7712, "lng": -86.1568 },
+      "routineTags": ["gym", "low_key"],
+      "cadencePerWeek": 3
+    },
+    {
+      "id": "routine-alex",
+      "userId": "alex",
+      "type": "river_run",
+      "label": "Pickup run club",
+      "daysOfWeek": ["saturday"],
+      "timeWindow": { "start": "09:00", "end": "10:30" },
+      "locationCoords": { "lat": 39.7742, "lng": -86.1714 },
+      "routineTags": ["run", "social", "trail"],
+      "cadencePerWeek": 1
+    },
+    {
+      "id": "routine-taylor",
+      "userId": "taylor",
+      "type": "coffee_run",
+      "label": "Laptop + latte",
+      "daysOfWeek": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+      "timeWindow": { "start": "10:00", "end": "12:00" },
+      "locationCoords": { "lat": 39.7691, "lng": -86.1612 },
+      "routineTags": ["coffee", "cowork", "walk_break"],
+      "cadencePerWeek": 5
+    },
+    {
+      "id": "routine-fatima",
+      "userId": "fatima",
+      "type": "morning_walk",
+      "label": "Canal tea loop",
+      "daysOfWeek": ["friday", "sunday"],
+      "timeWindow": { "start": "09:00", "end": "09:45" },
+      "locationCoords": { "lat": 39.7691, "lng": -86.1612 },
+      "routineTags": ["tea", "walk", "canal"],
+      "cadencePerWeek": 2
+    },
+    {
+      "id": "routine-diego",
+      "userId": "diego",
+      "type": "market_run",
+      "label": "Mercado-style market run",
+      "daysOfWeek": ["saturday"],
+      "timeWindow": { "start": "11:00", "end": "12:30" },
+      "locationCoords": { "lat": 39.7649, "lng": -86.1462 },
+      "routineTags": ["market", "food", "friends"],
+      "cadencePerWeek": 1
+    },
+    {
+      "id": "routine-amara",
+      "userId": "amara",
+      "type": "morning_walk",
+      "label": "Bridge + fiction podcast",
+      "daysOfWeek": ["sunday"],
+      "timeWindow": { "start": "10:30", "end": "11:15" },
+      "locationCoords": { "lat": 39.7688, "lng": -86.1584 },
+      "routineTags": ["walk", "jazz", "slow"],
+      "cadencePerWeek": 1
+    },
+    {
+      "id": "routine-yuki",
+      "userId": "yuki",
+      "type": "river_run",
+      "label": "Trail photo ride",
+      "daysOfWeek": ["wednesday", "saturday"],
+      "timeWindow": { "start": "17:30", "end": "18:20" },
+      "locationCoords": { "lat": 39.7742, "lng": -86.1714 },
+      "routineTags": ["bike", "trail", "photo"],
+      "cadencePerWeek": 2
+    },
+    {
+      "id": "routine-kwame",
+      "userId": "kwame",
+      "type": "gym_session",
+      "label": "Studio stretch + coffee",
+      "daysOfWeek": ["tuesday", "thursday"],
+      "timeWindow": { "start": "18:00", "end": "19:00" },
+      "locationCoords": { "lat": 39.7814, "lng": -86.1498 },
+      "routineTags": ["studio", "music", "coffee"],
+      "cadencePerWeek": 2
+    },
+    {
+      "id": "routine-lin",
+      "userId": "lin",
+      "type": "market_run",
+      "label": "Bubble tea + market snacks",
+      "daysOfWeek": ["saturday"],
+      "timeWindow": { "start": "14:00", "end": "15:30" },
+      "locationCoords": { "lat": 39.7649, "lng": -86.1462 },
+      "routineTags": ["market", "tea", "games"],
+      "cadencePerWeek": 1
+    },
+    {
+      "id": "routine-anand",
+      "userId": "anand",
+      "type": "morning_walk",
+      "label": "Cricket chat walk",
+      "daysOfWeek": ["saturday"],
+      "timeWindow": { "start": "08:30", "end": "09:15" },
+      "locationCoords": { "lat": 39.7688, "lng": -86.1584 },
+      "routineTags": ["walk", "cricket", "chai"],
+      "cadencePerWeek": 1
+    },
+    {
+      "id": "routine-mei",
+      "userId": "mei",
+      "type": "ceramics_walk",
+      "label": "Sketch-to-studio stroll",
+      "daysOfWeek": ["thursday"],
+      "timeWindow": { "start": "17:00", "end": "18:00" },
+      "locationCoords": { "lat": 39.7814, "lng": -86.1498 },
+      "routineTags": ["art", "walk", "quiet"],
+      "cadencePerWeek": 1
+    },
+    {
+      "id": "routine-sofia",
+      "userId": "sofia",
+      "type": "river_run",
+      "label": "Group trail social",
+      "daysOfWeek": ["sunday"],
+      "timeWindow": { "start": "15:00", "end": "16:30" },
+      "locationCoords": { "lat": 39.7742, "lng": -86.1714 },
+      "routineTags": ["trail", "group", "hike"],
+      "cadencePerWeek": 1
+    },
+    {
       "id": "routine-viewer",
       "userId": "viewer",
       "type": "morning_walk",
@@ -190,7 +616,28 @@
     { "userId": "elena", "occurredAt": "2026-03-30T17:45:00-04:00" },
     { "userId": "elena", "occurredAt": "2026-04-02T17:48:00-04:00" },
     { "userId": "marcus", "occurredAt": "2026-04-01T18:06:00-04:00" },
-    { "userId": "marcus", "occurredAt": "2026-04-03T18:09:00-04:00" }
+    { "userId": "marcus", "occurredAt": "2026-04-03T18:09:00-04:00" },
+    { "userId": "sam", "occurredAt": "2026-04-02T09:15:00-04:00" },
+    { "userId": "sam", "occurredAt": "2026-04-04T09:20:00-04:00" },
+    { "userId": "jules", "occurredAt": "2026-04-01T18:40:00-04:00" },
+    { "userId": "jules", "occurredAt": "2026-04-03T18:42:00-04:00" },
+    { "userId": "riley", "occurredAt": "2026-03-15T10:05:00-04:00" },
+    { "userId": "casey", "occurredAt": "2026-04-02T09:40:00-04:00" },
+    { "userId": "casey", "occurredAt": "2026-04-04T09:35:00-04:00" },
+    { "userId": "omar", "occurredAt": "2026-04-01T21:10:00-04:00" },
+    { "userId": "omar", "occurredAt": "2026-04-03T21:05:00-04:00" },
+    { "userId": "alex", "occurredAt": "2026-04-02T09:15:00-04:00" },
+    { "userId": "taylor", "occurredAt": "2026-04-01T10:30:00-04:00" },
+    { "userId": "taylor", "occurredAt": "2026-04-03T11:00:00-04:00" },
+    { "userId": "fatima", "occurredAt": "2026-04-04T09:05:00-04:00" },
+    { "userId": "diego", "occurredAt": "2026-04-02T11:20:00-04:00" },
+    { "userId": "amara", "occurredAt": "2026-03-30T10:40:00-04:00" },
+    { "userId": "yuki", "occurredAt": "2026-04-01T17:45:00-04:00" },
+    { "userId": "kwame", "occurredAt": "2026-04-03T18:10:00-04:00" },
+    { "userId": "lin", "occurredAt": "2026-04-05T14:10:00-04:00" },
+    { "userId": "anand", "occurredAt": "2026-04-05T08:35:00-04:00" },
+    { "userId": "mei", "occurredAt": "2026-04-02T17:05:00-04:00" },
+    { "userId": "sofia", "occurredAt": "2026-04-06T15:12:00-04:00" }
   ],
   "activeIntentions": [
     {
@@ -272,6 +719,150 @@
       "durationMinutes": 60,
       "contextTags": ["ceramics", "walking"],
       "status": "open"
+    },
+    {
+      "id": "intent-sam-1",
+      "creatorId": "sam",
+      "type": "coffee_run",
+      "label": "Deep work cafe slot",
+      "startOffsetMinutes": 48,
+      "createdOffsetMinutes": -40,
+      "startLocation": { "lat": 39.7691, "lng": -86.1612 },
+      "endLocation": { "lat": 39.7684, "lng": -86.1595 },
+      "localSpotName": "Canal Walk",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 3,
+      "durationMinutes": 90,
+      "contextTags": ["coffee", "laptop", "quiet"],
+      "status": "open"
+    },
+    {
+      "id": "intent-jules-1",
+      "creatorId": "jules",
+      "type": "river_run",
+      "label": "Golden hour ride + playlist",
+      "startOffsetMinutes": 195,
+      "createdOffsetMinutes": -75,
+      "startLocation": { "lat": 39.7742, "lng": -86.1714 },
+      "endLocation": { "lat": 39.7755, "lng": -86.1728 },
+      "localSpotName": "White River Trail",
+      "desiredGroupSize": 3,
+      "cadencePerWeek": 2,
+      "durationMinutes": 55,
+      "contextTags": ["cycling", "music", "trail"],
+      "status": "open"
+    },
+    {
+      "id": "intent-casey-1",
+      "creatorId": "casey",
+      "type": "morning_walk",
+      "label": "Stroller loop + cold brew",
+      "startOffsetMinutes": 42,
+      "createdOffsetMinutes": -32,
+      "startLocation": { "lat": 39.7688, "lng": -86.1584 },
+      "endLocation": { "lat": 39.7695, "lng": -86.1602 },
+      "localSpotName": "Highland Park Bridge",
+      "desiredGroupSize": 3,
+      "cadencePerWeek": 3,
+      "durationMinutes": 40,
+      "contextTags": ["walk", "coffee", "park"],
+      "status": "open"
+    },
+    {
+      "id": "intent-taylor-1",
+      "creatorId": "taylor",
+      "type": "coffee_run",
+      "label": "Cowork crawl break",
+      "startOffsetMinutes": 65,
+      "createdOffsetMinutes": -38,
+      "startLocation": { "lat": 39.7691, "lng": -86.1612 },
+      "endLocation": { "lat": 39.7705, "lng": -86.1598 },
+      "localSpotName": "Canal Walk",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 5,
+      "durationMinutes": 35,
+      "contextTags": ["coffee", "walk", "remote"],
+      "status": "open"
+    },
+    {
+      "id": "intent-fatima-1",
+      "creatorId": "fatima",
+      "type": "morning_walk",
+      "label": "Canal tea & poetry",
+      "startOffsetMinutes": 38,
+      "createdOffsetMinutes": -28,
+      "startLocation": { "lat": 39.7691, "lng": -86.1612 },
+      "endLocation": { "lat": 39.7683, "lng": -86.1598 },
+      "localSpotName": "Canal Walk",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 2,
+      "durationMinutes": 40,
+      "contextTags": ["tea", "walk", "quiet"],
+      "status": "open"
+    },
+    {
+      "id": "intent-diego-1",
+      "creatorId": "diego",
+      "type": "market_run",
+      "label": "Market tasting + salsa steps",
+      "startOffsetMinutes": 125,
+      "createdOffsetMinutes": -50,
+      "startLocation": { "lat": 39.7649, "lng": -86.1462 },
+      "endLocation": { "lat": 39.7638, "lng": -86.145 },
+      "localSpotName": "City Market",
+      "desiredGroupSize": 3,
+      "cadencePerWeek": 1,
+      "durationMinutes": 55,
+      "contextTags": ["market", "food", "music"],
+      "status": "open"
+    },
+    {
+      "id": "intent-yuki-1",
+      "creatorId": "yuki",
+      "type": "river_run",
+      "label": "Slow trail + matcha stop",
+      "startOffsetMinutes": 188,
+      "createdOffsetMinutes": -68,
+      "startLocation": { "lat": 39.7742, "lng": -86.1714 },
+      "endLocation": { "lat": 39.7758, "lng": -86.1725 },
+      "localSpotName": "White River Trail",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 2,
+      "durationMinutes": 45,
+      "contextTags": ["bike", "trail", "photo"],
+      "status": "open"
+    },
+    {
+      "id": "intent-kwame-1",
+      "creatorId": "kwame",
+      "type": "gym_session",
+      "label": "Afrobeats stretch block",
+      "startOffsetMinutes": 210,
+      "createdOffsetMinutes": -62,
+      "startLocation": { "lat": 39.7814, "lng": -86.1498 },
+      "endLocation": { "lat": 39.7802, "lng": -86.151 },
+      "localSpotName": "Mass Ave Studio",
+      "desiredGroupSize": 3,
+      "cadencePerWeek": 2,
+      "durationMinutes": 50,
+      "contextTags": ["music", "stretch", "social"],
+      "status": "open"
+    },
+    {
+      "id": "intent-lin-1",
+      "creatorId": "lin",
+      "type": "market_run",
+      "label": "Board-game snack run",
+      "startOffsetMinutes": 155,
+      "createdOffsetMinutes": -45,
+      "startLocation": { "lat": 39.7649, "lng": -86.1462 },
+      "endLocation": { "lat": 39.7658, "lng": -86.1475 },
+      "localSpotName": "City Market",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 1,
+      "durationMinutes": 40,
+      "contextTags": ["market", "games", "snacks"],
+      "status": "open"
     }
   ],
   "updates": [
@@ -290,5 +881,102 @@
       "message": "A new ritual blueprint was drafted for City Market.",
       "offsetMinutes": -4
     }
-  ]
+  ],
+  "errandPresets": [
+    { "id": "grocery", "label": "Grocery run", "errandKey": "grocery" },
+    { "id": "coffee", "label": "Coffee / cafe", "errandKey": "coffee" },
+    { "id": "dog", "label": "Dog walk loop", "errandKey": "dog_walk" },
+    { "id": "gym", "label": "Gym trip", "errandKey": "gym" },
+    { "id": "laundry", "label": "Laundry / wash", "errandKey": "laundry" },
+    { "id": "transit", "label": "Transit hop", "errandKey": "transit" }
+  ],
+  "nearbyEvents": [
+    {
+      "id": "evt-jazz",
+      "title": "Canal jazz pop-up",
+      "venueLabel": "Canal Walk",
+      "lat": 39.7691,
+      "lng": -86.1612,
+      "startsOffsetMinutes": 180,
+      "interestedUserIds": ["maya", "jules", "zoe", "diego", "kwame"]
+    },
+    {
+      "id": "evt-market",
+      "title": "City Market tasting row",
+      "venueLabel": "City Market",
+      "lat": 39.7649,
+      "lng": -86.1462,
+      "startsOffsetMinutes": 240,
+      "interestedUserIds": ["elena", "priya", "sam", "lin", "amara"]
+    },
+    {
+      "id": "evt-trail",
+      "title": "White River group walk",
+      "venueLabel": "White River Trail",
+      "lat": 39.7742,
+      "lng": -86.1714,
+      "startsOffsetMinutes": 300,
+      "interestedUserIds": ["marcus", "noah", "jules"]
+    },
+    {
+      "id": "evt-studio",
+      "title": "Mass Ave open studio night",
+      "venueLabel": "Mass Ave Studio",
+      "lat": 39.7814,
+      "lng": -86.1498,
+      "startsOffsetMinutes": 360,
+      "interestedUserIds": ["zoe", "marcus"]
+    }
+  ],
+  "hobbyOptions": [
+    "90s jazz",
+    "photography",
+    "trail running",
+    "library mornings",
+    "board games",
+    "meal prep",
+    "vinyl",
+    "pickup basketball",
+    "ceramics",
+    "night rides",
+    "stroller miles",
+    "open mic",
+    "climbing",
+    "specialty coffee",
+    "salsa",
+    "cricket",
+    "language exchange",
+    "calligraphy",
+    "afrobeats",
+    "urban sketching"
+  ],
+  "quickChoices": [
+    {
+      "id": "social_pace",
+      "question": "How do you like to meet people?",
+      "options": [
+        { "value": "low_key", "label": "Low-key, one at a time" },
+        { "value": "small_groups", "label": "Small groups (3–5)" },
+        { "value": "bigger_energy", "label": "Bigger energy / events" }
+      ]
+    },
+    {
+      "id": "weekend_vibe",
+      "question": "Weekend default?",
+      "options": [
+        { "value": "outdoors", "label": "Outdoors first" },
+        { "value": "third_places", "label": "Cafes & third places" },
+        { "value": "home_reset", "label": "Home reset, then maybe out" }
+      ]
+    }
+  ],
+  "pillarGuide": {
+    "title": "Compatibility of moment",
+    "rows": [
+      { "pillar": "Activity alignment", "weight": "40%", "tracks": "Same mundane errand or overlapping 20-minute window" },
+      { "pillar": "Social velocity", "weight": "30%", "tracks": "Events attended & willingness to join more" },
+      { "pillar": "Lifestyle entropy", "weight": "15%", "tracks": "Slipping routines get a boost from steady neighbors" },
+      { "pillar": "Conversational anchors", "weight": "15%", "tracks": "Hobbies & shared third places" }
+    ]
+  }
 }

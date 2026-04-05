@@ -41,7 +41,18 @@ function materializeSeed(seed, now = new Date()) {
       kind: item.kind,
       message: item.message,
       timestamp: item.timestamp || isoMinutesFrom(now, Number(item.offsetMinutes || 0))
-    }))
+    })),
+    errandPresets: cloneJson(seed.errandPresets || []),
+    nearbyEvents: (seed.nearbyEvents || []).map((item) => ({
+      ...cloneJson(item),
+      startsAt: item.startsAt || isoMinutesFrom(now, Number(item.startsOffsetMinutes ?? 300)),
+      startsOffsetMinutes: undefined
+    })),
+    hobbyOptions: cloneJson(seed.hobbyOptions || []),
+    quickChoices: cloneJson(seed.quickChoices || []),
+    pillarGuide: cloneJson(seed.pillarGuide || {}),
+    viewerErrands: [],
+    eventInterests: []
   };
 }
 
@@ -57,8 +68,31 @@ function sanitizeState(state) {
     userRoutines: cloneJson(state.userRoutines || []),
     routineLogs: cloneJson(state.routineLogs || []),
     activeIntentions: cloneJson(state.activeIntentions || []),
-    updates: cloneJson(state.updates || [])
+    updates: cloneJson(state.updates || []),
+    errandPresets: cloneJson(state.errandPresets || []),
+    nearbyEvents: cloneJson(state.nearbyEvents || []),
+    hobbyOptions: cloneJson(state.hobbyOptions || []),
+    quickChoices: cloneJson(state.quickChoices || []),
+    pillarGuide: cloneJson(state.pillarGuide || {}),
+    viewerErrands: cloneJson(state.viewerErrands || []),
+    eventInterests: cloneJson(state.eventInterests || [])
   };
+}
+
+function mergeUserProfiles(seedList, runtimeList) {
+  const byId = Object.fromEntries((runtimeList || []).map((p) => [p.id, p]));
+  return (seedList || []).map((p) => ({ ...cloneJson(p), ...(byId[p.id] || {}) }));
+}
+
+function mergeNearbyEvents(seedEvents, runtimeEvents) {
+  const rtById = Object.fromEntries((runtimeEvents || []).map((e) => [e.id, e]));
+  return (seedEvents || []).map((e) => {
+    const rt = rtById[e.id];
+    return {
+      ...cloneJson(e),
+      interestedUserIds: rt?.interestedUserIds ?? e.interestedUserIds ?? []
+    };
+  });
 }
 
 export class BuildModeDataStore {
@@ -71,13 +105,28 @@ export class BuildModeDataStore {
   }
 
   async loadState() {
-    if (existsSync(this.runtimePath)) {
-      const runtimeContent = await readFile(this.runtimePath, "utf-8");
-      return sanitizeState(JSON.parse(runtimeContent));
+    const seedContent = await readFile(this.seedPath, "utf-8");
+    const seed = materializeSeed(JSON.parse(seedContent));
+
+    if (!existsSync(this.runtimePath)) {
+      return seed;
     }
 
-    const seedContent = await readFile(this.seedPath, "utf-8");
-    return materializeSeed(JSON.parse(seedContent));
+    const runtime = JSON.parse(await readFile(this.runtimePath, "utf-8"));
+    const rt = sanitizeState(runtime);
+
+    return {
+      ...seed,
+      ...rt,
+      errandPresets: seed.errandPresets?.length ? seed.errandPresets : rt.errandPresets,
+      hobbyOptions: seed.hobbyOptions?.length ? seed.hobbyOptions : rt.hobbyOptions,
+      quickChoices: seed.quickChoices?.length ? seed.quickChoices : rt.quickChoices,
+      pillarGuide: Object.keys(seed.pillarGuide || {}).length ? seed.pillarGuide : rt.pillarGuide,
+      nearbyEvents: mergeNearbyEvents(seed.nearbyEvents, rt.nearbyEvents),
+      userProfiles: mergeUserProfiles(seed.userProfiles, rt.userProfiles),
+      viewerErrands: rt.viewerErrands || [],
+      eventInterests: rt.eventInterests || []
+    };
   }
 
   async saveState(state) {

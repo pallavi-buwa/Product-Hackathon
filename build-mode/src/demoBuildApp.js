@@ -1,8 +1,15 @@
 import { randomUUID } from "node:crypto";
 import { createBuildModePlan } from "./buildModeService.js";
 import { BuildModeDataStore } from "./buildModeDataStore.js";
+import { analyzeRoutineEntropy } from "./entropy.js";
 import { haversineMiles } from "./geo.js";
+import { computeHeatZones } from "./heatMapCompute.js";
 import { createTemplateInvitationSynthesizer } from "./invitationSynthesizer.js";
+import {
+  computePillarScores,
+  matchHighlightTemplate,
+  maybeMatchHighlightLine
+} from "./pillarScoring.js";
 import { InMemoryBuildModeRepository } from "./repositories/inMemoryBuildModeRepository.js";
 import { createTemplateRitualBlueprintGenerator } from "./ritualBlueprint.js";
 
@@ -51,6 +58,30 @@ function getDefaultCenter(state) {
   return state.viewport?.center || { lat: 39.7684, lng: -86.1581 };
 }
 
+function tokenizeTitle(title) {
+  return String(title || "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length > 2);
+}
+
+function eventPersonalizationScore(event, prefs) {
+  const base = (event.interestedUserIds || []).length;
+  const v = Number(prefs?.venueScores?.[event.venueLabel] || 0);
+  let tag = 0;
+  if (prefs?.tagHits) {
+    for (const w of tokenizeTitle(event.title)) {
+      tag += Number(prefs.tagHits[w] || 0);
+    }
+  }
+  return base + v * 3 + tag * 2;
+}
+
+function feedbackPercentBonusFromViewer(viewer) {
+  const n = viewer?.recommendationPreferences?.netScore ?? 0;
+  return Math.round(Math.max(-2, Math.min(4, n * 0.35)));
+}
+
 function getDefaultViewport(state) {
   const center = getDefaultCenter(state);
   return {
@@ -68,6 +99,7 @@ function toPostSummary({ post, profile, center }) {
     id: post.id,
     creatorId: post.creatorId,
     creatorName: profile?.firstName || "Someone",
+    creatorOriginNote: profile?.originNote || null,
     type: post.type,
     label: post.label,
     localSpotName: post.localSpotName,
@@ -119,7 +151,11 @@ export class DemoBuildModeApp {
     const loadedState = await this.dataStore.loadState();
     this.state = {
       ...loadedState,
-      plansByIntentionId: new Map()
+      plansByIntentionId: new Map(),
+      viewerErrands: loadedState.viewerErrands || [],
+      nearbyEvents: loadedState.nearbyEvents || [],
+      errandPresets: loadedState.errandPresets || [],
+      eventInterests: loadedState.eventInterests || []
     };
   }
 
@@ -151,6 +187,9 @@ export class DemoBuildModeApp {
       message: update.message,
       timestamp: update.timestamp || new Date().toISOString()
     };
+    if (update.visibleMs != null && Number.isFinite(update.visibleMs)) {
+      payload.visibleMs = Math.round(update.visibleMs);
+    }
 
     this.state.updates.unshift(payload);
     this.state.updates = this.state.updates.slice(0, 18);
@@ -207,8 +246,334 @@ export class DemoBuildModeApp {
       routineTypeOptions: this.state.routineTypeOptions,
       composerDefaults: this.state.composerDefaults,
       liveFeed: this.getLiveFeed(),
-      featuredPosts: (await this.listPosts({ center: viewport.center, bounds: viewport.bounds })).slice(0, 6)
+      featuredPosts: (await this.listPosts({ center: viewport.center, bounds: viewport.bounds })).slice(0, 6),
+      heatZones: this.getHeatZones(),
+      nearbyEvents: this.getPublicEvents(),
+      errandPresets: this.state.errandPresets || [],
+      hobbyOptions: this.state.hobbyOptions || [],
+      quickChoices: this.state.quickChoices || [],
+      pillarGuide: this.state.pillarGuide || {}
     };
+  }
+
+  getHeatZones() {
+    return computeHeatZones({
+      mapPlaces: this.state.mapPlaces,
+      userRoutines: this.state.userRoutines,
+      activeIntentions: this.state.activeIntentions,
+      viewerErrands: this.state.viewerErrands || []
+    });
+  }
+
+  getPublicEvents() {
+    const viewer = this.getProfile(this.state.viewerId);
+    const prefs = viewer?.recommendationPreferences || { venueScores: {}, tagHits: {}, netScore: 0 };
+    const raw = [...(this.state.nearbyEvents || [])];
+    raw.sort(
+      (a, b) => eventPersonalizationScore(b, prefs) - eventPersonalizationScore(a, prefs)
+    );
+    return raw.map((e) => ({
+      id: e.id,
+      title: e.title,
+      venueLabel: e.venueLabel,
+      lat: e.lat,
+      lng: e.lng,
+      startsAt: e.startsAt,
+      interestCount: (e.interestedUserIds || []).length,
+      youAreInterested: (e.interestedUserIds || []).includes(this.state.viewerId)
+    }));
+  }
+
+  sharedEventIds(viewerId, neighborId) {
+    return (this.state.nearbyEvents || [])
+      .filter(
+        (e) =>
+          (e.interestedUserIds || []).includes(viewerId) &&
+          (e.interestedUserIds || []).includes(neighborId)
+      )
+      .map((e) => e.id);
+  }
+
+  detectErrandOverlapWithNeighbor(neighborId) {
+    const mine = (this.state.viewerErrands || []).filter((e) => e.userId === this.state.viewerId);
+    if (!mine.length) {
+      return false;
+    }
+    const last = mine[mine.length - 1];
+    const ws = new Date(last.windowStart).getTime();
+    const we = new Date(last.windowEnd).getTime();
+    const key = (last.errandKey || "").toLowerCase().replace(/_/g, " ");
+
+    for (const post of this.state.activeIntentions) {
+      if (post.creatorId !== neighborId || post.status !== "open") {
+        continue;
+      }
+      const pt = new Date(post.startTime).getTime();
+      if (pt < ws - 20 * 60 * 1000 || pt > we + 20 * 60 * 1000) {
+        continue;
+      }
+      const blob = `${post.type} ${(post.contextTags || []).join(" ")} ${post.label || ""}`.toLowerCase();
+      if (key && blob.includes(key.trim())) {
+        return true;
+      }
+      const hints = ["coffee", "grocery", "gym", "walk", "dog", "market", "run"];
+      if (hints.some((h) => blob.includes(h) && (key.includes(h) || (last.label || "").toLowerCase().includes(h)))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async getNeighborMatches() {
+    await this.ensureReady();
+    const viewer = this.getProfile(this.state.viewerId);
+    if (!viewer) {
+      return { matches: [] };
+    }
+
+    const viewerLogs = this.state.routineLogs.filter((l) => l.userId === viewer.id);
+    const neighbors = this.state.userProfiles.filter((p) => p.id !== viewer.id);
+    const results = [];
+
+    const feedbackPercentBonus = feedbackPercentBonusFromViewer(viewer);
+
+    for (const neighbor of neighbors) {
+      const shared = this.sharedEventIds(viewer.id, neighbor.id);
+      const overlappingErrand = this.detectErrandOverlapWithNeighbor(neighbor.id);
+      const neighborLogs = this.state.routineLogs.filter((l) => l.userId === neighbor.id);
+      const nEnt = analyzeRoutineEntropy({ logs: neighborLogs, asOf: new Date() });
+      const neighborRoutineStable = !nEnt.entropyTriggerActive;
+
+      const scoring = computePillarScores(viewer, neighbor, {
+        sharedEventIds: shared,
+        overlappingErrand,
+        neighborRoutineStable,
+        viewerRoutineLogs: viewerLogs,
+        now: new Date(),
+        feedbackPercentBonus
+      });
+
+      results.push({
+        neighborId: neighbor.id,
+        firstName: neighbor.firstName,
+        percent: scoring.percent,
+        weights: scoring.weights,
+        breakdown: scoring.breakdown,
+        labels: scoring.labels,
+        sharedEventCount: shared.length,
+        overlappingErrand
+      });
+    }
+
+    results.sort((a, b) => b.percent - a.percent);
+
+    const openaiKey = process.env.OPENAI_API_KEY?.trim();
+    const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+    const baseUrl = process.env.OPENAI_BASE_URL;
+
+    const slimMatches = results.map((r) => ({
+      neighborId: r.neighborId,
+      firstName: r.firstName,
+      percent: r.percent,
+      sharedEventCount: r.sharedEventCount,
+      overlappingErrand: r.overlappingErrand
+    }));
+
+    let highlight = null;
+    const top = results[0];
+    if (top) {
+      const openPost = this.state.activeIntentions.find(
+        (p) => p.status === "open" && p.creatorId === top.neighborId
+      );
+      const postSummary = openPost
+        ? {
+            id: openPost.id,
+            label: openPost.label,
+            localSpotName: openPost.localSpotName,
+            contextTags: openPost.contextTags || []
+          }
+        : null;
+
+      let line = matchHighlightTemplate(top, postSummary);
+      if (openaiKey) {
+        const aiLine = await maybeMatchHighlightLine(
+          viewer,
+          top,
+          postSummary,
+          openaiKey,
+          model,
+          baseUrl
+        );
+        if (aiLine) {
+          line = aiLine;
+        }
+      }
+
+      highlight = {
+        neighborId: top.neighborId,
+        firstName: top.firstName,
+        percent: top.percent,
+        postId: postSummary?.id ?? null,
+        overlappingErrand: top.overlappingErrand,
+        line
+      };
+    }
+
+    return { matches: slimMatches, highlight };
+  }
+
+  async updateViewerOnboarding(payload) {
+    await this.ensureReady();
+    const idx = this.state.userProfiles.findIndex((p) => p.id === this.state.viewerId);
+    if (idx < 0) {
+      return null;
+    }
+    const cur = this.state.userProfiles[idx];
+    const hobbies = Array.isArray(payload.hobbies) ? payload.hobbies : cur.hobbies || [];
+    const thirdPlaces = Array.isArray(payload.thirdPlaces) ? payload.thirdPlaces : cur.thirdPlaces || [];
+    const quickChoiceAnswers =
+      payload.quickChoiceAnswers && typeof payload.quickChoiceAnswers === "object"
+        ? { ...(cur.onboardingHints || {}), ...payload.quickChoiceAnswers }
+        : cur.onboardingHints || {};
+
+    this.state.userProfiles[idx] = {
+      ...cur,
+      hobbies,
+      thirdPlaces,
+      interests: Array.isArray(payload.interests) ? payload.interests : cur.interests,
+      willingToAttendMore:
+        payload.willingToAttendMore != null ? Number(payload.willingToAttendMore) : cur.willingToAttendMore,
+      onboardingHints: quickChoiceAnswers
+    };
+    await this.persistState();
+    return this.getProfile(this.state.viewerId);
+  }
+
+  async addViewerErrand(payload) {
+    await this.ensureReady();
+    const preset = (this.state.errandPresets || []).find((p) => p.id === payload.presetId);
+    const errandKey = payload.errandKey || preset?.errandKey || "custom";
+    const label =
+      payload.customLabel?.trim() ||
+      preset?.label ||
+      `${errandKey} errand`;
+    const center = getDefaultCenter(this.state);
+    const lat = Number(payload.lat ?? center.lat);
+    const lng = Number(payload.lng ?? center.lng);
+    const windowMinutes = Math.min(120, Math.max(10, Number(payload.windowMinutes || 25)));
+    const windowStart = new Date().toISOString();
+    const windowEnd = new Date(Date.now() + windowMinutes * 60 * 1000).toISOString();
+
+    const errand = {
+      id: randomUUID(),
+      userId: this.state.viewerId,
+      label,
+      errandKey,
+      lat,
+      lng,
+      openToTagAlong: Boolean(payload.openToTagAlong),
+      windowStart,
+      windowEnd,
+      createdAt: new Date().toISOString()
+    };
+
+    if (!this.state.viewerErrands) {
+      this.state.viewerErrands = [];
+    }
+    this.state.viewerErrands.push(errand);
+
+    const halfWindowMs = Math.round((windowMinutes / 2) * 60 * 1000);
+    const syncVisibleMs = Math.min(30 * 60 * 1000, Math.max(60 * 1000, halfWindowMs));
+
+    let errandSync = null;
+    for (const post of this.state.activeIntentions) {
+      if (post.status !== "open" || post.creatorId === this.state.viewerId) {
+        continue;
+      }
+      const profile = this.getProfile(post.creatorId);
+      if (this.detectErrandOverlapWithNeighbor(post.creatorId)) {
+        const msg = `${profile?.firstName || "Someone"} has a similar run near ${post.localSpotName} — open to tag along?`;
+        this.publishUpdate({
+          kind: "sync",
+          message: msg,
+          timestamp: new Date().toISOString(),
+          visibleMs: syncVisibleMs
+        });
+        errandSync = { message: msg, visibleMs: syncVisibleMs };
+        break;
+      }
+    }
+
+    await this.persistState();
+    return { errand, heatZones: this.getHeatZones(), errandSync };
+  }
+
+  async submitRecommendationFeedback(payload) {
+    await this.ensureReady();
+    const idx = this.state.userProfiles.findIndex((p) => p.id === this.state.viewerId);
+    if (idx < 0) {
+      return null;
+    }
+    const cur = this.state.userProfiles[idx];
+    const helpful = Boolean(payload.helpful);
+    const prev = cur.recommendationPreferences || {};
+    const venueScores = { ...(prev.venueScores || {}) };
+    const tagHits = { ...(prev.tagHits || {}) };
+    let netScore = Number(prev.netScore || 0);
+
+    if (payload.venueLabel) {
+      const k = String(payload.venueLabel);
+      venueScores[k] = (venueScores[k] || 0) + (helpful ? 0.12 : -0.08);
+      venueScores[k] = Math.max(-1, Math.min(1.5, venueScores[k]));
+    }
+
+    const title = payload.title ? String(payload.title) : "";
+    if (title) {
+      for (const w of tokenizeTitle(title)) {
+        tagHits[w] = (tagHits[w] || 0) + (helpful ? 0.06 : -0.04);
+        tagHits[w] = Math.max(-0.5, Math.min(1, tagHits[w]));
+      }
+    }
+
+    netScore += helpful ? 1 : -1;
+    netScore = Math.max(-12, Math.min(16, netScore));
+
+    this.state.userProfiles[idx] = {
+      ...cur,
+      recommendationPreferences: {
+        venueScores,
+        tagHits,
+        netScore
+      }
+    };
+    await this.persistState();
+    return this.getProfile(this.state.viewerId);
+  }
+
+  async toggleEventInterest(eventId) {
+    await this.ensureReady();
+    const event = (this.state.nearbyEvents || []).find((e) => e.id === eventId);
+    if (!event) {
+      return null;
+    }
+    if (!event.interestedUserIds) {
+      event.interestedUserIds = [];
+    }
+    const vid = this.state.viewerId;
+    const i = event.interestedUserIds.indexOf(vid);
+    if (i >= 0) {
+      event.interestedUserIds.splice(i, 1);
+    } else {
+      event.interestedUserIds.push(vid);
+      this.publishUpdate({
+        kind: "event",
+        message: `You're in for ${event.title}. Others who opted in will match you higher.`,
+        timestamp: new Date().toISOString(),
+        visibleMs: 10000
+      });
+    }
+    await this.persistState();
+    return this.getPublicEvents();
   }
 
   async listPosts(query = {}) {

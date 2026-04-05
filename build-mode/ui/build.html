@@ -30,8 +30,8 @@
         <section class="workspace reveal" id="build-app">
           <div class="section-header">
             <div>
-              <p class="eyebrow">Interactive Workspace</p>
               <h3 id="workspace-title">Browse routines around you and post your own anchor.</h3>
+              <p id="workspace-error" class="workspace-error" hidden></p>
             </div>
             <div class="section-status">
               <span id="viewport-label">Current area</span>
@@ -40,77 +40,119 @@
           </div>
 
           <div class="workspace-grid">
-            <aside class="card composer-card" id="composer">
-              <div class="card-header">
-                <div>
-                  <p class="eyebrow">Create a post</p>
-                  <h4>Start a low-pressure ritual</h4>
-                </div>
-                <span class="pill">Uses current map center</span>
-              </div>
-
-              <form id="composer-form">
-                <label>
-                  Label
-                  <input name="label" type="text" required />
-                </label>
-
-                <div class="split-fields">
-                  <label>
-                    Routine
-                    <select name="type" id="routine-type-select"></select>
-                  </label>
-
-                  <label>
-                    Group size
-                    <input name="desiredGroupSize" type="number" min="1" max="4" />
-                  </label>
+            <div class="left-stack">
+              <aside class="card composer-card" id="composer">
+                <div class="card-header">
+                  <div>
+                    <p class="eyebrow">Create a post</p>
+                    <h4>Start a low-pressure ritual</h4>
+                  </div>
                 </div>
 
-                <div class="split-fields">
+                <form id="composer-form">
                   <label>
-                    Start time
-                    <input name="startTime" type="datetime-local" required />
+                    Label
+                    <input name="label" type="text" required />
                   </label>
 
-                  <label>
-                    Duration
-                    <input name="durationMinutes" type="number" min="15" max="180" />
-                  </label>
-                </div>
+                  <div class="split-fields">
+                    <label>
+                      Routine
+                      <select name="type" id="routine-type-select"></select>
+                    </label>
 
-                <div class="split-fields">
-                  <label>
-                    Spot name
+                    <label>
+                      Group size
+                      <input name="desiredGroupSize" type="number" min="1" max="4" />
+                    </label>
+                  </div>
+
+                  <div class="split-fields">
+                    <label>
+                      Start time
+                      <input name="startTime" type="datetime-local" required />
+                    </label>
+
+                    <label>
+                      Duration
+                      <input name="durationMinutes" type="number" min="15" max="180" />
+                    </label>
+                  </div>
+
+                  <label class="spot-block">
+                    <span class="spot-label-row">Spot name</span>
                     <input name="localSpotName" type="text" required />
+                    <span class="spot-map-hint">
+                      Pins use the <strong>map center</strong> below. Pan or zoom the map before you publish if you want a different corner.
+                    </span>
                   </label>
 
                   <label>
                     Weekly cadence
                     <input name="cadencePerWeek" type="number" min="1" max="7" />
                   </label>
+
+                  <label>
+                    Context tags <span class="label-optional">(optional)</span>
+                    <input
+                      name="contextTags"
+                      type="text"
+                      placeholder="e.g. walk, coffee, market"
+                    />
+                  </label>
+
+                  <button class="primary-button wide-button" type="submit">Publish ritual</button>
+                </form>
+              </aside>
+
+              <details class="card optional-panel" open>
+                <summary class="optional-panel-summary">
+                  <span class="eyebrow">Profile</span>
+                  <strong>Hobbies &amp; how you like to meet</strong>
+                  <span class="optional-hint">Improves fit on pins — save once</span>
+                </summary>
+                <div class="optional-panel-body">
+                  <div id="hobby-chip-field" class="chip-field"></div>
+                  <div id="quick-choice-fields" class="quick-choice-stack"></div>
+                  <div class="willing-scale-block">
+                    <label class="range-label" for="willing-events-range">
+                      Willing to join nearby events
+                    </label>
+                    <div class="willing-scale-wrap">
+                      <input
+                        type="range"
+                        id="willing-events-range"
+                        min="1"
+                        max="5"
+                        step="1"
+                        aria-valuemin="1"
+                        aria-valuemax="5"
+                      />
+                      <div class="willing-scale-ticks" aria-hidden="true">
+                        <span>1</span>
+                        <span>2</span>
+                        <span>3</span>
+                        <span>4</span>
+                        <span>5</span>
+                      </div>
+                    </div>
+                    <p class="willing-scale-caption">
+                      Selected: <span id="willing-events-value" class="range-value">3</span>
+                      <span class="willing-scale-meta">1 = rarely · 5 = very open</span>
+                    </p>
+                  </div>
+                  <button type="button" class="ghost-button wide-button" id="save-signals-btn">
+                    Save profile
+                  </button>
                 </div>
+              </details>
+            </div>
 
-                <label>
-                  Context tags
-                  <input
-                    name="contextTags"
-                    type="text"
-                    placeholder="walk, coffee, market"
-                  />
-                </label>
-
-                <button class="primary-button wide-button" type="submit">
-                  Publish and generate blueprint
-                </button>
-              </form>
-            </aside>
-
-            <section class="card map-card">
+            <section class="card map-card map-card-with-events">
               <div class="card-header">
                 <div>
-                  <p class="eyebrow">Routine map</p>
-                  <h4>Move around to find nearby posts</h4>
+                  <p class="eyebrow">Map</p>
+                  <h4>Rituals, pins, and fit %</h4>
                 </div>
                 <div class="map-controls">
                   <button class="map-button" id="zoom-in" type="button">+</button>
@@ -118,42 +160,106 @@
                 </div>
               </div>
 
-              <div class="map-shell">
-                <div id="map" aria-label="Interactive neighborhood map"></div>
-                <div class="map-legend">
-                  <span><i class="marker marker-live"></i> Open ritual</span>
-                  <span><i class="marker marker-you"></i> Your post</span>
+              <div class="map-column-stack">
+                <div class="map-shell">
+                  <div id="map" aria-label="Interactive neighborhood map"></div>
+                  <div class="map-legend">
+                    <span class="legend-heat">
+                      <i class="heat-dot"></i> Activity heat
+                    </span>
+                    <span><i class="marker marker-live"></i> Open ritual</span>
+                    <span><i class="marker marker-you"></i> Your post</span>
+                    <span class="legend-fit"><i class="fit-legend-badge">%</i> Fit on pin</span>
+                  </div>
+                  <div class="map-hint">
+                    <strong>Fit %</strong> on a neighbor pin is how well your saved profile lines up with their ritual; your post shows <strong>You</strong>. Under <strong>Quick errand</strong>, join an event with <strong>I&rsquo;m in</strong> to refresh scores.
+                  </div>
+                  <div id="match-spotlight" class="match-spotlight" hidden>
+                    <div class="match-spotlight-backdrop" id="spotlight-backdrop"></div>
+                    <div
+                      class="match-spotlight-card"
+                      role="dialog"
+                      aria-modal="true"
+                      aria-labelledby="spotlight-title"
+                    >
+                      <button type="button" class="spotlight-close" id="spotlight-close" aria-label="Close">
+                        &times;
+                      </button>
+                      <p class="eyebrow">Right now</p>
+                      <h4 id="spotlight-title">Someone nearby</h4>
+                      <p id="spotlight-body" class="spotlight-body"></p>
+                      <div class="spotlight-actions">
+                        <button type="button" class="primary-button" id="spotlight-open-pin">Show on map</button>
+                        <button type="button" class="ghost-button" id="spotlight-dismiss">Dismiss</button>
+                      </div>
+                      <p class="spotlight-feedback-label">Was this suggestion useful?</p>
+                      <div class="spotlight-feedback-row">
+                        <button type="button" class="ghost-button feedback-chip" id="spotlight-helpful" data-helpful="1">
+                          Yes, helpful
+                        </button>
+                        <button type="button" class="ghost-button feedback-chip" id="spotlight-not-helpful" data-helpful="0">
+                          Not for me
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="map-hint">
-                  Drag to pan. Scroll to zoom. Click a marker to open its blueprint.
+
+                <div class="map-posts-section" id="map-posts-section">
+                  <p class="map-posts-section-title">Open rituals in this view</p>
+                  <p class="map-posts-section-hint">
+                    Same width as the map — scroll sideways on small screens. Click a card to focus the pin.
+                  </p>
+                  <div class="map-posts-row" id="post-list" role="list"></div>
                 </div>
               </div>
             </section>
 
             <aside class="sidebar-stack">
-              <section class="card list-card">
+              <div id="live-toast-host" class="live-toast-host" aria-live="polite"></div>
+
+              <section class="card errands-sidebar-card" id="errands-card">
                 <div class="card-header">
                   <div>
-                    <p class="eyebrow">Nearby posts</p>
-                    <h4>Live anchors in view</h4>
+                    <p class="eyebrow">Quick errand</p>
+                    <h4>What you&rsquo;re doing soon</h4>
                   </div>
+                  <span class="pill">Tag-along</span>
                 </div>
-                <div class="post-list" id="post-list"></div>
+                <p class="card-hint">
+                  Log a run in the next little while. We&rsquo;ll nudge you if someone&rsquo;s open ritual lines up.
+                </p>
+                <div id="errand-preset-row" class="preset-chip-row"></div>
+                <label>
+                  Custom label <span class="label-optional">(optional)</span>
+                  <input type="text" id="errand-custom-label" placeholder="e.g. refill at Roastery" />
+                </label>
+                <div class="split-fields">
+                  <label>
+                    Window (minutes)
+                    <input type="number" id="errand-window" min="10" max="120" value="25" />
+                  </label>
+                  <label class="checkbox-inline">
+                    <input type="checkbox" id="errand-tag-along" checked />
+                    Open to tag-along
+                  </label>
+                </div>
+                <button type="button" class="primary-button wide-button" id="add-errand-btn">
+                  Log this errand
+                </button>
               </section>
 
-              <section class="card detail-card" id="detail-panel">
+              <section class="card events-sidebar-card" id="events-sidebar">
                 <div class="card-header">
                   <div>
-                    <p class="eyebrow">Blueprint</p>
-                    <h4 id="detail-title">Select a post to inspect the ritual plan</h4>
+                    <p class="eyebrow">Nearby</p>
+                    <h4>Happening nearby</h4>
                   </div>
                 </div>
-                <div id="detail-body" class="detail-body">
-                  <p class="empty-state">
-                    The selected post will show its generated ritual blueprint, top routine
-                    matches, and nudges meant for you here.
-                  </p>
-                </div>
+                <p class="card-hint events-sidebar-hint">
+                  Tap <strong>I&rsquo;m in</strong> to align with others — pin scores refresh. Thumbs adjust what we surface for you.
+                </p>
+                <div id="nearby-events-list" class="map-events-list events-sidebar-list"></div>
               </section>
             </aside>
           </div>

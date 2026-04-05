@@ -149,6 +149,40 @@ export function createServer({ port = 3030 } = {}) {
         return sendJson(response, 201, created);
       }
 
+      if (request.method === "GET" && pathname === "/api/neighbor-matches") {
+        return sendJson(response, 200, await app.getNeighborMatches());
+      }
+
+      if (request.method === "POST" && pathname === "/api/viewer/onboarding") {
+        const payload = await readJsonBody(request);
+        const viewer = await app.updateViewerOnboarding(payload);
+        return sendJson(response, 200, { viewer });
+      }
+
+      if (request.method === "POST" && pathname === "/api/viewer/errand") {
+        const payload = await readJsonBody(request);
+        const result = await app.addViewerErrand(payload);
+        return sendJson(response, 201, result);
+      }
+
+      if (request.method === "POST" && pathname === "/api/viewer/recommendation-feedback") {
+        const payload = await readJsonBody(request);
+        const viewer = await app.submitRecommendationFeedback(payload);
+        if (!viewer) {
+          return sendJson(response, 404, { error: "Viewer not found" });
+        }
+        return sendJson(response, 200, { viewer, events: app.getPublicEvents() });
+      }
+
+      const eventInterestMatch = pathname.match(/^\/api\/events\/([^/]+)\/interest$/);
+      if (request.method === "POST" && eventInterestMatch) {
+        const events = await app.toggleEventInterest(eventInterestMatch[1]);
+        if (!events) {
+          return sendNotFound(response);
+        }
+        return sendJson(response, 200, { events });
+      }
+
       // Social Opportunity Map — cross-analyze full weekly routine
       if (request.method === "POST" && pathname === "/api/social-map") {
         const { routines, city, name: userName } = await readJsonBody(request);
