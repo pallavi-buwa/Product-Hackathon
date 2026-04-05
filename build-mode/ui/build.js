@@ -30,11 +30,7 @@ const state = {
   livingMap: { heatZones: [], generationMode: "template", copy: {} },
   privateSocialHealth: null,
   workspaceRecommendations: [],
-  groupRecommendations: [],
-  tour: {
-    active: false,
-    index: 0
-  }
+  groupRecommendations: []
 };
 
 const elements = {
@@ -95,122 +91,8 @@ const elements = {
   groupRecsCard: document.querySelector("#group-recs-card"),
   groupRecsList: document.querySelector("#group-recs-list"),
   peopleNearbyFaces: document.querySelector("#people-nearby-faces"),
-  friendBloomLayer: document.querySelector("#friend-bloom-layer"),
-  tourModalShell: document.querySelector("#tour-modal-shell"),
-  tourModalBackdrop: document.querySelector("#tour-modal-backdrop"),
-  tourModalCard: document.querySelector("#tour-modal-card"),
-  tourKicker: document.querySelector("#tour-kicker"),
-  tourTitle: document.querySelector("#tour-title"),
-  tourDescription: document.querySelector("#tour-description"),
-  tourProgress: document.querySelector("#tour-progress"),
-  tourCancelBtn: document.querySelector("#tour-cancel-btn"),
-  tourStartBtn: document.querySelector("#tour-start-btn"),
-  tourNextBtn: document.querySelector("#tour-next-btn")
+  friendBloomLayer: document.querySelector("#friend-bloom-layer")
 };
-
-const tourSteps = [
-  {
-    kicker: "Step 1 of 13",
-    title: "Post a ritual people can join",
-    description:
-      "Start here to publish a routine, choose the time, and pin the spot from the center of the map.",
-    selector: "#accordion-post",
-    beforeFocus: () => openTourAccordion("#accordion-post")
-  },
-  {
-    kicker: "Step 2 of 13",
-    title: "Log quick errands when you want casual company",
-    description:
-      "This section is for smaller plans. Users can note a short errand, define the time window, and allow tag-alongs.",
-    selector: "#accordion-errand",
-    beforeFocus: () => openTourAccordion("#accordion-errand")
-  },
-  {
-    kicker: "Step 3 of 13",
-    title: "Save interests and comfort level privately",
-    description:
-      "Profile signals and the private social health score help tailor suggestions without exposing private details to other people.",
-    selector: "#accordion-profile",
-    beforeFocus: () => openTourAccordion("#accordion-profile")
-  },
-  {
-    kicker: "Step 4 of 13",
-    title: "Review your join request inbox",
-    description:
-      "The inbox dropdown collects requests from people who want to join your open rituals so you can accept or decline them in one place.",
-    selector: "#accordion-inbox",
-    beforeFocus: () => openTourAccordion("#accordion-inbox")
-  },
-  {
-    kicker: "Step 5 of 13",
-    title: "Check what is already planned",
-    description:
-      "This activity dropdown shows the rituals and errands you already have lined up, including anything you saved for later.",
-    selector: "#accordion-activity",
-    beforeFocus: () => openTourAccordion("#accordion-activity")
-  },
-  {
-    kicker: "Step 6 of 13",
-    title: "Browse weekly events",
-    description:
-      "Use the events dropdown to find upcoming nearby plans and decide where you want to opt in or RSVP.",
-    selector: "#accordion-events",
-    beforeFocus: () => openTourAccordion("#accordion-events")
-  },
-  {
-    kicker: "Step 7 of 13",
-    title: "Get help with invites and wording",
-    description:
-      "The concierge dropdown helps users draft friendly invites, soften awkward wording, and turn a rough idea into something sendable.",
-    selector: "#accordion-concierge",
-    beforeFocus: () => openTourAccordion("#accordion-concierge")
-  },
-  {
-    kicker: "Step 8 of 13",
-    title: "Use the map to browse nearby rituals",
-    description:
-      "The map card shows activity heat, open rituals, and your own posts so users can quickly understand what is happening nearby.",
-    selector: "#build-map-section"
-  },
-  {
-    kicker: "Step 9 of 13",
-    title: "Scan the open ritual cards",
-    description:
-      "This card lists the live rituals under the map. Users can tap a ritual to focus its pin and request to join.",
-    selector: "#map-posts-section"
-  },
-  {
-    kicker: "Step 10 of 13",
-    title: "Review people nearby and repeat matches",
-    description:
-      "This area surfaces people nearby, repeat chemistry, and recommendations based on shared rhythm and previous activity.",
-    selector: "#people-nearby-card"
-  },
-  {
-    kicker: "Step 11 of 13",
-    title: "See vibe-based recommendations",
-    description:
-      "This recommendations dropdown highlights people or groups whose signals line up well with the interests you saved.",
-    selector: "#accordion-recs-vibe",
-    beforeFocus: () => openTourAccordion("#accordion-recs-vibe")
-  },
-  {
-    kicker: "Step 12 of 13",
-    title: "Find suggestions based on past activity",
-    description:
-      "The history recommendations dropdown uses what the user has already done to suggest familiar kinds of plans they may want to join again.",
-    selector: "#accordion-recs-history",
-    beforeFocus: () => openTourAccordion("#accordion-recs-history")
-  },
-  {
-    kicker: "Step 13 of 13",
-    title: "Reuse favorites and repeat what worked",
-    description:
-      "The repeats dropdown lets users quickly refill the post form using templates based on activities they already liked.",
-    selector: "#accordion-repeats",
-    beforeFocus: () => openTourAccordion("#accordion-repeats")
-  }
-];
 
 async function requestJson(url, options = {}) {
   const response = await fetch(url, options);
@@ -349,216 +231,6 @@ function escapeAttr(s) {
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;");
-}
-
-function setTourTarget(selector) {
-  document.querySelectorAll(".tour-target-active").forEach((node) => {
-    node.classList.remove("tour-target-active");
-  });
-
-  if (!selector) {
-    return;
-  }
-
-  const node = document.querySelector(selector);
-  if (!node) {
-    return;
-  }
-
-  node.classList.add("tour-target-active");
-  node.scrollIntoView({ behavior: "smooth", block: "center" });
-}
-
-function openTourAccordion(selector) {
-  const accordions = document.querySelectorAll("details.lodge-accordion");
-  if (!selector) {
-    return;
-  }
-  accordions.forEach((accordion) => {
-    accordion.open = accordion.matches(selector);
-  });
-}
-
-function clearTourPlacement() {
-  const card = elements.tourModalCard;
-  if (!card) {
-    return;
-  }
-
-  card.classList.remove(
-    "tour-modal-card--left",
-    "tour-modal-card--right",
-    "tour-modal-card--top",
-    "tour-modal-card--bottom"
-  );
-  card.style.removeProperty("left");
-  card.style.removeProperty("top");
-}
-
-function positionTourPopover(selector) {
-  const card = elements.tourModalCard;
-  const shell = elements.tourModalShell;
-  if (!card || !shell) {
-    return;
-  }
-
-  clearTourPlacement();
-  shell.classList.remove("tour-modal-shell--guided");
-
-  if (!selector) {
-    return;
-  }
-
-  const target = document.querySelector(selector);
-  if (!target) {
-    return;
-  }
-
-  shell.classList.add("tour-modal-shell--guided");
-
-  const targetRect = target.getBoundingClientRect();
-  const cardRect = card.getBoundingClientRect();
-  const gap = 18;
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-
-  let placement = "right";
-  if (viewportWidth - targetRect.right < cardRect.width + gap + 24) {
-    placement = targetRect.left > cardRect.width + gap + 24 ? "left" : "bottom";
-  }
-  if (
-    placement === "bottom" &&
-    viewportHeight - targetRect.bottom < cardRect.height + gap + 24
-  ) {
-    placement = "top";
-  }
-
-  let left = (viewportWidth - cardRect.width) / 2;
-  let top = (viewportHeight - cardRect.height) / 2;
-
-  if (placement === "right") {
-    left = targetRect.right + gap;
-    top = targetRect.top + targetRect.height / 2 - cardRect.height / 2;
-  } else if (placement === "left") {
-    left = targetRect.left - cardRect.width - gap;
-    top = targetRect.top + targetRect.height / 2 - cardRect.height / 2;
-  } else if (placement === "bottom") {
-    left = targetRect.left + targetRect.width / 2 - cardRect.width / 2;
-    top = targetRect.bottom + gap;
-  } else if (placement === "top") {
-    left = targetRect.left + targetRect.width / 2 - cardRect.width / 2;
-    top = targetRect.top - cardRect.height - gap;
-  }
-
-  left = Math.max(16, Math.min(left, viewportWidth - cardRect.width - 16));
-  top = Math.max(16, Math.min(top, viewportHeight - cardRect.height - 16));
-
-  card.classList.add(`tour-modal-card--${placement}`);
-  card.style.left = `${left}px`;
-  card.style.top = `${top}px`;
-}
-
-function closeTour() {
-  state.tour.active = false;
-  state.tour.index = 0;
-  document.body.classList.remove("tour-open");
-  if (elements.tourModalShell) {
-    elements.tourModalShell.hidden = true;
-  }
-  setTourTarget(null);
-}
-
-function renderTourStep() {
-  const step = tourSteps[state.tour.index];
-  if (!step || !elements.tourModalShell) {
-    return;
-  }
-
-  step.beforeFocus?.();
-  document.body.classList.add("tour-open");
-  elements.tourModalShell.hidden = false;
-  elements.tourKicker.textContent = step.kicker;
-  elements.tourTitle.textContent = step.title;
-  elements.tourDescription.textContent = step.description;
-
-  if (elements.tourProgress) {
-    elements.tourProgress.hidden = false;
-    elements.tourProgress.innerHTML = tourSteps
-      .map((_, index) => {
-        const active = index <= state.tour.index ? " tour-progress-dot-active" : "";
-        return `<span class="tour-progress-dot${active}"></span>`;
-      })
-      .join("");
-  }
-
-  if (elements.tourStartBtn) {
-    elements.tourStartBtn.hidden = true;
-  }
-  if (elements.tourNextBtn) {
-    elements.tourNextBtn.hidden = false;
-    elements.tourNextBtn.textContent =
-      state.tour.index === tourSteps.length - 1 ? "Finish" : "Next";
-  }
-
-  setTourTarget(step.selector);
-  requestAnimationFrame(() => {
-    positionTourPopover(step.selector);
-  });
-}
-
-function startTour() {
-  state.tour.active = true;
-  state.tour.index = 0;
-  renderTourStep();
-}
-
-function advanceTour() {
-  if (!state.tour.active) {
-    return;
-  }
-
-  if (state.tour.index >= tourSteps.length - 1) {
-    closeTour();
-    return;
-  }
-
-  state.tour.index += 1;
-  renderTourStep();
-}
-
-function installStartTour() {
-  if (!elements.tourModalShell) {
-    return;
-  }
-
-  document.body.classList.remove("tour-open");
-  elements.tourModalShell.hidden = false;
-  if (elements.tourKicker) {
-    elements.tourKicker.textContent = "Welcome";
-  }
-  if (elements.tourTitle) {
-    elements.tourTitle.textContent = "Start a quick tour?";
-  }
-  if (elements.tourDescription) {
-    elements.tourDescription.textContent =
-      "We can walk through every dropdown and major card in Explore Nearby so users understand what each part of the page is for before they start.";
-  }
-  if (elements.tourProgress) {
-    elements.tourProgress.hidden = true;
-    elements.tourProgress.innerHTML = "";
-  }
-  if (elements.tourStartBtn) {
-    elements.tourStartBtn.hidden = false;
-  }
-  if (elements.tourNextBtn) {
-    elements.tourNextBtn.hidden = true;
-  }
-  clearTourPlacement();
-
-  elements.tourStartBtn?.addEventListener("click", startTour);
-  elements.tourNextBtn?.addEventListener("click", advanceTour);
-  elements.tourCancelBtn?.addEventListener("click", closeTour);
-  elements.tourModalBackdrop?.addEventListener("click", closeTour);
 }
 
 /** Same stable index as server `demoBuildApp` pravatar fallback. */
@@ -2625,7 +2297,6 @@ async function initialize() {
   await refreshNeighborMatches();
   installListInteractions();
   installMapboxMap();
-  installStartTour();
 
   const focusId = applyFocusFromUrl();
   if (focusId) {
@@ -2650,9 +2321,6 @@ async function initialize() {
 
 window.addEventListener("resize", () => {
   state.map?.resize();
-  if (state.tour.active) {
-    positionTourPopover(tourSteps[state.tour.index]?.selector);
-  }
 });
 
 initialize().catch((error) => {
