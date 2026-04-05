@@ -323,7 +323,7 @@
               </details>
             </div>
 
-            <section class="card map-card map-card-with-events build-map-section">
+            <section class="card map-card map-card-with-events build-map-section" id="build-map-section">
               <div class="card-header">
                 <div>
                   <p class="eyebrow">Map</p>
@@ -405,7 +405,7 @@
               </div>
             </section>
 
-            <section class="card people-nearby-card" aria-labelledby="people-nearby-heading">
+            <section class="card people-nearby-card" id="people-nearby-card" aria-labelledby="people-nearby-heading">
               <h3 id="people-nearby-heading" class="people-nearby-title">People nearby</h3>
               <p class="people-nearby-lead">Hosts on the map right now — tap a face to find their pin.</p>
               <p class="people-nearby-tools">
@@ -509,6 +509,23 @@
           </div>
         </section>
       </main>
+    </div>
+
+    <div class="tour-modal-shell" id="tour-modal-shell" hidden>
+      <div class="tour-modal-backdrop" id="tour-modal-backdrop"></div>
+      <section class="tour-modal-card" id="tour-modal-card" role="dialog" aria-modal="true" aria-labelledby="tour-title">
+        <p class="tour-kicker" id="tour-kicker">Welcome</p>
+        <h3 class="tour-title" id="tour-title">Start a quick tour?</h3>
+        <p class="tour-description" id="tour-description">
+          We can walk through the main areas in Explore Nearby so users know where to post, browse, and respond before they dive in.
+        </p>
+        <div class="tour-progress" id="tour-progress" hidden></div>
+        <div class="tour-actions">
+          <button type="button" class="ghost-button" id="tour-cancel-btn">Cancel</button>
+          <button type="button" class="primary-button" id="tour-start-btn">Start tour</button>
+          <button type="button" class="primary-button" id="tour-next-btn" hidden>Next</button>
+        </div>
+      </section>
     </div>
 
     <div id="friend-bloom-layer" class="friend-bloom-layer" aria-hidden="true">
