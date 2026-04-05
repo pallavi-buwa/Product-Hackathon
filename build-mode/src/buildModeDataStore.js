@@ -41,6 +41,31 @@ function materializeSeed(seed, now = new Date()) {
     return row;
   });
 
+  const intentionStartsById = Object.fromEntries(
+    (seed.activeIntentions || []).map((item) => {
+      const st = item.startTime || isoMinutesFrom(now, Number(item.startOffsetMinutes || 0));
+      return [item.id, st];
+    })
+  );
+
+  const postRsvpRequests = (seed.postRsvpRequests || []).map((item) => {
+    const row = cloneJson(item);
+    const offs = Number(row.createdOffsetMinutes);
+    row.createdAt =
+      row.createdAt || (Number.isFinite(offs) ? isoMinutesFrom(now, offs) : now.toISOString());
+    delete row.createdOffsetMinutes;
+    const startsAt = intentionStartsById[row.postId];
+    const ts = startsAt ? new Date(startsAt).getTime() : now.getTime();
+    const twoDays = 2 * 24 * 60 * 60 * 1000;
+    row.visibleToHostAfter =
+      row.revealPolicy === "last2days" ? new Date(ts - twoDays).toISOString() : row.createdAt;
+    row.status = row.status || "pending";
+    row.revealPolicy = row.revealPolicy === "last2days" ? "last2days" : "always";
+    const post = (seed.activeIntentions || []).find((p) => p.id === row.postId);
+    row.hostId = post?.creatorId || row.hostId || null;
+    return row;
+  });
+
   return {
     brand: cloneJson(seed.brand || {}),
     globeSignals: cloneJson(seed.globeSignals || []),
@@ -120,7 +145,8 @@ function materializeSeed(seed, now = new Date()) {
       delete row.offsetHours;
       return row;
     }),
-    eventRsvpRequests
+    eventRsvpRequests,
+    postRsvpRequests
   };
 }
 
@@ -149,7 +175,8 @@ function sanitizeState(state) {
     repeatTemplates: cloneJson(state.repeatTemplates || []),
     workspaceFunFacts: cloneJson(state.workspaceFunFacts || []),
     neighborErrandLogs: cloneJson(state.neighborErrandLogs || []),
-    eventRsvpRequests: cloneJson(state.eventRsvpRequests || [])
+    eventRsvpRequests: cloneJson(state.eventRsvpRequests || []),
+    postRsvpRequests: cloneJson(state.postRsvpRequests || [])
   };
 }
 
@@ -220,7 +247,11 @@ export class BuildModeDataStore {
       eventRsvpRequests:
         Array.isArray(rt.eventRsvpRequests) && rt.eventRsvpRequests.length > 0
           ? rt.eventRsvpRequests
-          : seed.eventRsvpRequests
+          : seed.eventRsvpRequests,
+      postRsvpRequests:
+        Array.isArray(rt.postRsvpRequests) && rt.postRsvpRequests.length > 0
+          ? rt.postRsvpRequests
+          : seed.postRsvpRequests
     };
   }
 

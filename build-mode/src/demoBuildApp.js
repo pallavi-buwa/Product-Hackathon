@@ -304,7 +304,8 @@ export class DemoBuildModeApp {
       repeatTemplates: loadedState.repeatTemplates || [],
       workspaceFunFacts: loadedState.workspaceFunFacts || [],
       neighborErrandLogs: loadedState.neighborErrandLogs || [],
-      eventRsvpRequests: loadedState.eventRsvpRequests || []
+      eventRsvpRequests: loadedState.eventRsvpRequests || [],
+      postRsvpRequests: loadedState.postRsvpRequests || []
     };
   }
 
@@ -450,7 +451,9 @@ export class DemoBuildModeApp {
   getHostRsvpInbox() {
     const vid = this.state.viewerId;
     const now = Date.now();
-    return (this.state.eventRsvpRequests || [])
+    const visible = (r) => now >= new Date(r.visibleToHostAfter || 0).getTime();
+
+    const eventRows = (this.state.eventRsvpRequests || [])
       .filter((r) => {
         if (r.status !== "pending") {
           return false;
@@ -459,21 +462,52 @@ export class DemoBuildModeApp {
         if (!ev || ev.hostId !== vid) {
           return false;
         }
-        const visibleAfter = new Date(r.visibleToHostAfter || 0).getTime();
-        return now >= visibleAfter;
+        return visible(r);
       })
       .map((r) => {
         const ev = (this.state.nearbyEvents || []).find((e) => e.id === r.eventId);
         const g = this.getProfile(r.guestId);
         return {
           id: r.id,
+          kind: "event",
           eventId: r.eventId,
           eventTitle: ev?.title || "Event",
           guestId: r.guestId,
           guestName: g?.firstName || "Someone",
-          revealPolicy: r.revealPolicy
+          revealPolicy: r.revealPolicy,
+          createdAt: r.createdAt
         };
       });
+
+    const ritualRows = (this.state.postRsvpRequests || [])
+      .filter((r) => {
+        if (r.status !== "pending") {
+          return false;
+        }
+        const post = this.state.activeIntentions.find((p) => p.id === r.postId);
+        if (!post || post.creatorId !== vid) {
+          return false;
+        }
+        return visible(r);
+      })
+      .map((r) => {
+        const post = this.state.activeIntentions.find((p) => p.id === r.postId);
+        const g = this.getProfile(r.guestId);
+        return {
+          id: r.id,
+          kind: "ritual",
+          postId: r.postId,
+          eventTitle: post?.label || "Open ritual",
+          guestId: r.guestId,
+          guestName: g?.firstName || "Someone",
+          revealPolicy: r.revealPolicy,
+          createdAt: r.createdAt
+        };
+      });
+
+    return [...eventRows, ...ritualRows].sort(
+      (a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+    );
   }
 
   async requestEventRsvp(eventId, { revealPolicy = "always" } = {}) {
@@ -513,26 +547,85 @@ export class DemoBuildModeApp {
 
   async respondToRsvp(requestId, accept) {
     await this.ensureReady();
-    const req = (this.state.eventRsvpRequests || []).find((r) => r.id === requestId);
+    let req = (this.state.eventRsvpRequests || []).find((r) => r.id === requestId);
+    if (req && req.status === "pending") {
+      const event = (this.state.nearbyEvents || []).find((e) => e.id === req.eventId);
+      if (!event || event.hostId !== this.state.viewerId) {
+        return null;
+      }
+      req.status = accept ? "accepted" : "rejected";
+      req.respondedAt = new Date().toISOString();
+      if (accept) {
+        if (!event.interestedUserIds) {
+          event.interestedUserIds = [];
+        }
+        if (!event.interestedUserIds.includes(req.guestId)) {
+          event.interestedUserIds.push(req.guestId);
+        }
+      }
+      await this.persistState();
+      return { events: this.getPublicEvents(), inbox: this.getHostRsvpInbox() };
+    }
+
+    req = (this.state.postRsvpRequests || []).find((r) => r.id === requestId);
     if (!req || req.status !== "pending") {
       return null;
     }
-    const event = (this.state.nearbyEvents || []).find((e) => e.id === req.eventId);
-    if (!event || event.hostId !== this.state.viewerId) {
+    const post = this.state.activeIntentions.find((p) => p.id === req.postId);
+    if (!post || post.creatorId !== this.state.viewerId) {
       return null;
     }
     req.status = accept ? "accepted" : "rejected";
     req.respondedAt = new Date().toISOString();
     if (accept) {
-      if (!event.interestedUserIds) {
-        event.interestedUserIds = [];
+      if (!post.rsvpAcceptedUserIds) {
+        post.rsvpAcceptedUserIds = [];
       }
-      if (!event.interestedUserIds.includes(req.guestId)) {
-        event.interestedUserIds.push(req.guestId);
+      if (!post.rsvpAcceptedUserIds.includes(req.guestId)) {
+        post.rsvpAcceptedUserIds.push(req.guestId);
       }
     }
     await this.persistState();
     return { events: this.getPublicEvents(), inbox: this.getHostRsvpInbox() };
+  }
+
+  async requestPostRsvp(postId, { revealPolicy = "always" } = {}) {
+    await this.ensureReady();
+    const post = this.state.activeIntentions.find((p) => p.id === postId && p.status === "open");
+    if (!post) {
+      return null;
+    }
+    if (post.creatorId === this.state.viewerId) {
+      return null;
+    }
+    const dup = (this.state.postRsvpRequests || []).find(
+      (r) => r.postId === postId && r.guestId === this.state.viewerId && r.status === "pending"
+    );
+    if (dup) {
+      return { inbox: this.getHostRsvpInbox(), duplicate: true };
+    }
+    const starts = new Date(post.startTime).getTime();
+    const twoDays = 2 * 24 * 60 * 60 * 1000;
+    const policy = revealPolicy === "last2days" ? "last2days" : "always";
+    const createdAt = new Date().toISOString();
+    const visibleToHostAfter =
+      policy === "last2days" ? new Date(starts - twoDays).toISOString() : createdAt;
+    const row = {
+      id: randomUUID(),
+      postId,
+      hostId: post.creatorId,
+      guestId: this.state.viewerId,
+      status: "pending",
+      revealPolicy: policy,
+      createdAt,
+      visibleToHostAfter
+    };
+    if (!this.state.postRsvpRequests) {
+      this.state.postRsvpRequests = [];
+    }
+    this.state.postRsvpRequests.push(row);
+    await this.persistState();
+    return { inbox: this.getHostRsvpInbox(), duplicate: false };
   }
 
   async lodgeChat(messages) {
@@ -996,16 +1089,30 @@ export class DemoBuildModeApp {
     const defaultViewport = getDefaultViewport(this.state);
     const viewport = buildViewportFromQuery(query, defaultViewport);
 
+    const vid = this.state.viewerId;
+    const rsvps = this.state.postRsvpRequests || [];
     return this.state.activeIntentions
       .filter((post) => post.status === "open" && withinBounds(post.startLocation, viewport.bounds))
-      .map((post) =>
-        toPostSummary({
+      .map((post) => {
+        const summary = toPostSummary({
           post,
           profile: this.getProfile(post.creatorId),
           center: viewport.center,
           ritualBonds: this.state.ritualBonds
-        })
-      )
+        });
+        const mine = rsvps.filter((r) => r.postId === post.id && r.guestId === vid);
+        const latest = mine.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+        let yourRsvp = "none";
+        if (latest) {
+          yourRsvp = latest.status === "pending" ? "pending" : latest.status;
+        }
+        return {
+          ...summary,
+          hostId: post.creatorId,
+          youAreHost: post.creatorId === vid,
+          yourRsvp
+        };
+      })
       .sort((a, b) => (a.distanceMiles ?? 0) - (b.distanceMiles ?? 0));
   }
 

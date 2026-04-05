@@ -275,6 +275,18 @@ export function createServer({ port = 3030 } = {}) {
         return sendJson(response, 200, result);
       }
 
+      const postRsvpMatch = pathname.match(/^\/api\/posts\/([^/]+)\/rsvp$/);
+      if (request.method === "POST" && postRsvpMatch) {
+        const payload = await readJsonBody(request);
+        const result = await app.requestPostRsvp(postRsvpMatch[1], {
+          revealPolicy: payload?.revealPolicy
+        });
+        if (!result) {
+          return sendNotFound(response);
+        }
+        return sendJson(response, 200, result);
+      }
+
       if (request.method === "POST" && pathname === "/api/chat") {
         const payload = await readJsonBody(request);
         const out = await app.lodgeChat(payload?.messages || []);

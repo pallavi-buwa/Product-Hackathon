@@ -868,6 +868,22 @@
       "status": "open"
     },
     {
+      "id": "intent-viewer-1",
+      "creatorId": "viewer",
+      "type": "morning_walk",
+      "label": "Library steps + journal",
+      "startOffsetMinutes": 50,
+      "createdOffsetMinutes": -20,
+      "startLocation": { "lat": 39.7685, "lng": -86.157 },
+      "endLocation": { "lat": 39.769, "lng": -86.1565 },
+      "localSpotName": "Central Library steps",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 2,
+      "durationMinutes": 30,
+      "contextTags": ["walk", "quiet"],
+      "status": "open"
+    },
+    {
       "id": "intent-zoe-1",
       "creatorId": "zoe",
       "type": "ceramics_walk",
@@ -1128,6 +1144,16 @@
       "status": "pending",
       "revealPolicy": "last2days",
       "createdOffsetMinutes": -90
+    }
+  ],
+  "postRsvpRequests": [
+    {
+      "id": "rsvp-seed-ritual-marcus",
+      "postId": "intent-viewer-1",
+      "guestId": "marcus",
+      "status": "pending",
+      "revealPolicy": "always",
+      "createdOffsetMinutes": -45
     }
   ],
   "hobbyOptions": [

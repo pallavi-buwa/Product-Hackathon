@@ -195,6 +195,17 @@ async function postRecommendationFeedback(body) {
   await refreshNeighborMatches();
 }
 
+function truncatePinLabel(s, maxLen = 36) {
+  const t = String(s ?? "").trim();
+  if (!t) {
+    return "";
+  }
+  if (t.length <= maxLen) {
+    return t;
+  }
+  return `${t.slice(0, Math.max(0, maxLen - 1))}…`;
+}
+
 function escapeHtml(s) {
   return String(s)
     .replace(/&/g, "&amp;")
@@ -354,6 +365,7 @@ function mergeRsvpApiPayload(data) {
     state.bootstrap.rsvpInbox = data.inbox;
     renderRsvpInbox();
   }
+  loadPosts().catch(console.error);
 }
 
 function renderRsvpInbox() {
@@ -375,9 +387,11 @@ function renderRsvpInbox() {
         r.revealPolicy === "last2days"
           ? '<span class="rsvp-reveal-pill" title="Guest asked to stay hidden until 2 days before start">Late reveal</span>'
           : "";
+      const kind = r.kind === "ritual" ? "Ritual" : "Event";
       return `
         <div class="rsvp-inbox-row" data-request-id="${escapeHtml(r.id)}">
           <div class="rsvp-inbox-text">
+            <span class="rsvp-kind-pill">${kind}</span>
             <strong>${escapeHtml(r.guestName)}</strong>
             <span class="rsvp-inbox-event">${escapeHtml(r.eventTitle)}</span>
             ${late}
@@ -996,7 +1010,7 @@ async function focusNeighborOnMap(neighborId) {
   const post = state.posts.find((p) => p.creatorId === neighborId);
   if (post) {
     await loadDetail(post.id);
-    document.querySelector("#map-nearby-posts-block")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    document.querySelector("#map-posts-section")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     showLiveToast(`Focused ${post.creatorName}'s pin.`);
     return;
   }
@@ -1382,6 +1396,38 @@ function updateViewportLabels() {
   elements.postCountLabel.textContent = `${state.posts.length} posts in view`;
 }
 
+function ritualPostRsvpMarkup(post) {
+  const idEsc = escapeHtml(post.id);
+  const rs = post.yourRsvp || "none";
+  if (post.youAreHost) {
+    return `<p class="post-card-rsvp-note">You’re hosting — <strong>Inbox</strong> has join requests.</p>`;
+  }
+  if (rs === "accepted") {
+    return `<p class="post-card-rsvp-note post-card-rsvp-note--ok">Host accepted your RSVP.</p>`;
+  }
+  if (rs === "rejected") {
+    return `<p class="post-card-rsvp-note">Host declined this time.</p>`;
+  }
+  if (rs === "pending") {
+    return `<p class="post-card-rsvp-note">RSVP sent — host will respond.</p>`;
+  }
+  return `
+    <div class="post-card-rsvp" data-post-rsvp-wrap="${idEsc}">
+      <label class="post-card-rsvp-pick">
+        <input type="checkbox" class="post-rsvp-pick-cb" data-post-id="${idEsc}" />
+        <span>Ask to join</span>
+      </label>
+      <div class="post-card-rsvp-form hidden" data-post-rsvp-panel="${idEsc}">
+        <label class="checkbox-inline post-card-rsvp-hide">
+          <input type="checkbox" class="post-rsvp-hide-cb" data-post-id="${idEsc}" />
+          Hide my name until 2 days before start
+        </label>
+        <button type="button" class="primary-button post-rsvp-send" data-post-id="${idEsc}">Send RSVP</button>
+      </div>
+    </div>
+  `;
+}
+
 function postCardMarkup(post) {
   const selected = post.id === state.selectedPostId ? "selected" : "";
   const tags = (post.contextTags || [])
@@ -1397,6 +1443,7 @@ function postCardMarkup(post) {
   const avatarBlock = isViewer
     ? `<div class="post-card-avatar post-card-avatar--you post-card-avatar--sm" aria-hidden="true">You</div>`
     : `<img class="post-card-avatar post-card-avatar--sm" src="${escapeAttr(avatarSrc)}" alt="" width="40" height="40" loading="lazy" />`;
+  const rsvpBlock = ritualPostRsvpMarkup(post);
   return `
     <article class="post-card post-card--strip post-card--compact ${selected}" data-post-id="${post.id}" role="listitem">
       <div class="post-card-row">
@@ -1407,6 +1454,7 @@ function postCardMarkup(post) {
           <h5>${escapeHtml(post.label)}</h5>
           <p class="post-card-where">${escapeHtml(post.localSpotName)} · ${escapeHtml(formatDistance(post.distanceMiles))}</p>
           <div class="tag-row">${tags}</div>
+          ${rsvpBlock}
         </div>
       </div>
     </article>
@@ -1433,6 +1481,57 @@ function emptyWithMascot(messageHtml, { variant = "tiny", extraWrapClass = "", p
   </div>`;
 }
 
+function bindPostRsvpHandlers() {
+  if (!elements.postList) {
+    return;
+  }
+  elements.postList.querySelectorAll(".post-card-rsvp").forEach((wrap) => {
+    wrap.addEventListener("click", (e) => e.stopPropagation());
+  });
+  elements.postList.querySelectorAll(".post-rsvp-pick-cb").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const panel = elements.postList.querySelector(`[data-post-rsvp-panel="${cb.dataset.postId}"]`);
+      if (panel) {
+        panel.classList.toggle("hidden", !cb.checked);
+      }
+    });
+  });
+  elements.postList.querySelectorAll(".post-rsvp-send").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.postId;
+      const pick = elements.postList.querySelector(`.post-rsvp-pick-cb[data-post-id="${id}"]`);
+      if (!pick?.checked) {
+        showLiveToast("Check “Ask to join” first.");
+        return;
+      }
+      const hideCb = elements.postList.querySelector(`.post-rsvp-hide-cb[data-post-id="${id}"]`);
+      const revealPolicy = hideCb?.checked ? "last2days" : "always";
+      try {
+        const data = await requestJson(`/api/posts/${id}/rsvp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ revealPolicy })
+        });
+        if (data.duplicate) {
+          showLiveToast("You already have a pending RSVP for this ritual.");
+          mergeRsvpApiPayload(data);
+          return;
+        }
+        mergeRsvpApiPayload(data);
+        showLiveToast(
+          revealPolicy === "last2days"
+            ? "RSVP sent — host may not see your name until 2 days before."
+            : "RSVP sent to the host."
+        );
+      } catch (err) {
+        console.error(err);
+        showLiveToast(err.message || "RSVP failed");
+      }
+    });
+  });
+}
+
 function renderPostList() {
   if (!state.posts.length) {
     elements.postList.innerHTML = emptyWithMascot(
@@ -1443,6 +1542,7 @@ function renderPostList() {
   }
 
   elements.postList.innerHTML = state.posts.map(postCardMarkup).join("");
+  bindPostRsvpHandlers();
 }
 
 function applyViewportFromMap() {
@@ -1472,14 +1572,17 @@ function markerElementForPost(post) {
   marker.className = `mapbox-post-marker${post.id === state.selectedPostId ? " selected" : ""}${
     isViewer ? " is-viewer" : ""
   }`;
+  const ritualTitle = (post.label && String(post.label).trim()) || "Open ritual";
+  const ritualShort = truncatePinLabel(ritualTitle, 36);
+  const who = isViewer ? "Your" : post.creatorName;
   marker.setAttribute(
     "aria-label",
-    `${isViewer ? "Your" : post.creatorName}'s ritual pin — hover for details`
+    `Open ritual: ${ritualTitle}. ${who} — hover for details`
   );
   const face = !isViewer
     ? `<img class="marker-avatar" src="${escapeAttr(post.creatorAvatarUrl || "")}" alt="" width="34" height="34" />`
     : `<span class="marker-avatar marker-avatar--you" aria-hidden="true">Y</span>`;
-  marker.innerHTML = `<span class="marker-pin-inner">${face}<span class="marker-name">${isViewer ? "You" : post.creatorName}</span></span>`;
+  marker.innerHTML = `<span class="marker-pin-inner">${face}<span class="marker-name">${isViewer ? "You" : escapeHtml(post.creatorName)}</span><span class="marker-ritual-label" title="${escapeAttr(ritualTitle)}">${escapeHtml(ritualShort)}</span></span>`;
   marker.addEventListener("click", async (event) => {
     event.stopPropagation();
     hidePinTooltip();
@@ -1805,12 +1908,15 @@ function installComposer() {
     }
 
     await loadPosts();
-    document.querySelector("#map-nearby-posts-block")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    document.querySelector("#map-posts-section")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
 }
 
 function installListInteractions() {
   elements.postList.addEventListener("click", async (event) => {
+    if (event.target.closest(".post-card-rsvp")) {
+      return;
+    }
     const card = event.target.closest("[data-post-id]");
     if (!card) {
       return;
