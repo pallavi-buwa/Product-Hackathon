@@ -1133,17 +1133,171 @@ a {
   color: #8b2942;
 }
 
-.workspace-grid {
-  display: grid;
-  grid-template-columns: minmax(260px, 300px) minmax(0, 1fr) minmax(260px, 320px);
-  gap: 18px;
-  align-items: start;
+/* Explore Nearby: single column — actions, map, then people & picks */
+.build-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  align-items: stretch;
+  width: 100%;
 }
 
-.left-stack {
-  display: grid;
-  gap: 18px;
-  align-content: start;
+.build-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(680px, 100%);
+  margin: 0 auto;
+}
+
+.build-map-section {
+  width: 100%;
+  max-width: none;
+}
+
+.live-toast-host--build {
+  position: sticky;
+  top: 88px;
+  z-index: 18;
+  min-height: 0;
+}
+
+.lodge-accordion {
+  padding: 16px 18px;
+}
+
+.lodge-accordion > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 0 4px;
+}
+
+.lodge-accordion > summary::-webkit-details-marker {
+  display: none;
+}
+
+.lodge-accordion > summary::after {
+  content: "";
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.lodge-accordion[open] > summary::after {
+  transform: rotate(225deg);
+}
+
+.lodge-accordion-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 10px;
+}
+
+.lodge-accordion-heading {
+  font-family: "Fraunces", serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.lodge-accordion-panel {
+  padding-top: 14px;
+  border-top: 1px solid rgba(31, 61, 43, 0.08);
+  margin-top: 10px;
+}
+
+.lodge-panel-hint {
+  margin-top: 0;
+}
+
+.build-section-heading {
+  font-family: "Fraunces", serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.build-inbox-card .card-hint {
+  margin-top: 0;
+}
+
+.people-nearby-card {
+  padding: 22px 20px 24px;
+}
+
+.people-nearby-title {
+  font-family: "Fraunces", serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 16px;
+  letter-spacing: -0.03em;
+}
+
+.rec-subsection {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(31, 61, 43, 0.1);
+}
+
+.rec-subsection-title {
+  font-family: "Fraunces", serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.rec-subsection-hint {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.rec-subsection-lead {
+  margin: 0 0 10px;
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.repeats-under-map--people {
+  margin-top: 8px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(31, 61, 43, 0.1);
+}
+
+.repeats-under-map--people .repeats-under-map-title {
+  display: none;
+}
+
+.concierge-card--open .concierge-body {
+  display: block;
+}
+
+.concierge-card--open .concierge-sub {
+  margin: 0 0 12px;
+  font-size: 0.84rem;
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .card {
@@ -2433,7 +2587,6 @@ a {
 
 @media (max-width: 1180px) {
   .hero,
-  .workspace-grid,
   .feature-grid {
     grid-template-columns: 1fr;
   }
@@ -2791,6 +2944,14 @@ a {
   background: rgba(255, 255, 255, 0.62);
 }
 
+.trust-repeat-card--people {
+  margin: 0 0 8px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
 .repeats-under-map {
   padding: 14px 18px 16px;
   background: rgba(255, 255, 255, 0.45);
@@ -2881,6 +3042,7 @@ a {
 }
 
 /* RSVP inbox */
+.build-inbox-card .card-hint,
 .notifications-card .card-hint {
   font-size: 0.78rem;
 }
@@ -2953,6 +3115,11 @@ a {
 .concierge-card {
   padding: 0;
   overflow: hidden;
+}
+
+.concierge-card--open {
+  padding: 20px;
+  overflow: visible;
 }
 
 .concierge-summary {

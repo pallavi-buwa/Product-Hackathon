@@ -41,77 +41,128 @@
             </div>
           </div>
 
-          <div class="workspace-grid">
-            <div class="left-stack">
-              <aside class="card composer-card" id="composer">
-                <div class="card-header">
-                  <div>
-                    <p class="eyebrow">Create a post</p>
-                    <h4>Post a ritual</h4>
-                  </div>
-                </div>
+          <div class="build-layout">
+            <div id="live-toast-host" class="live-toast-host live-toast-host--build" aria-live="polite"></div>
 
-                <form id="composer-form">
-                  <label>
-                    Label
-                    <input name="label" type="text" required />
-                  </label>
-
-                  <div class="split-fields">
-                    <label>
-                      Routine
-                      <select name="type" id="routine-type-select"></select>
-                    </label>
-
-                    <label>
-                      Group size
-                      <input name="desiredGroupSize" type="number" min="1" max="4" />
-                    </label>
-                  </div>
-
-                  <div class="split-fields">
-                    <label>
-                      Start time
-                      <input name="startTime" type="datetime-local" required />
-                    </label>
-
-                    <label>
-                      Duration
-                      <input name="durationMinutes" type="number" min="15" max="180" />
-                    </label>
-                  </div>
-
-                  <label class="spot-block">
-                    <span class="spot-label-row">Spot name</span>
-                    <input name="localSpotName" type="text" required />
-                    <span class="spot-map-hint">Pin drops at <strong>map center</strong> — pan first if you want another corner.</span>
-                  </label>
-
-                  <label>
-                    Weekly cadence
-                    <input name="cadencePerWeek" type="number" min="1" max="7" />
-                  </label>
-
-                  <label>
-                    Context tags <span class="label-optional">(optional)</span>
-                    <input
-                      name="contextTags"
-                      type="text"
-                      placeholder="e.g. walk, coffee, market"
-                    />
-                  </label>
-
-                  <button class="primary-button wide-button" type="submit">Publish ritual</button>
-                </form>
-              </aside>
-
-              <details class="card optional-panel" open>
-                <summary class="optional-panel-summary">
-                  <span class="eyebrow">Profile</span>
-                  <strong>Hobbies &amp; meeting style</strong>
-                  <span class="optional-hint">Social Health (private), picks for you &amp; fit % update when you save</span>
+            <div class="build-stack">
+              <details class="card lodge-accordion" id="accordion-post">
+                <summary class="lodge-accordion-summary">
+                  <img
+                    class="lodge-accordion-logo"
+                    src="/lodge-logo.png"
+                    alt=""
+                    width="40"
+                    height="40"
+                    decoding="async"
+                  />
+                  <span class="lodge-accordion-heading">Let people join you along</span>
                 </summary>
-                <div class="optional-panel-body">
+                <div class="lodge-accordion-panel">
+                  <aside class="composer-card" id="composer">
+                    <form id="composer-form">
+                      <label>
+                        Label
+                        <input name="label" type="text" required />
+                      </label>
+
+                      <div class="split-fields">
+                        <label>
+                          Routine
+                          <select name="type" id="routine-type-select"></select>
+                        </label>
+
+                        <label>
+                          Group size
+                          <input name="desiredGroupSize" type="number" min="1" max="4" />
+                        </label>
+                      </div>
+
+                      <div class="split-fields">
+                        <label>
+                          Start time
+                          <input name="startTime" type="datetime-local" required />
+                        </label>
+
+                        <label>
+                          Duration
+                          <input name="durationMinutes" type="number" min="15" max="180" />
+                        </label>
+                      </div>
+
+                      <label class="spot-block">
+                        <span class="spot-label-row">Spot name</span>
+                        <input name="localSpotName" type="text" required />
+                        <span class="spot-map-hint">Pin drops at <strong>map center</strong> — pan first if you want another corner.</span>
+                      </label>
+
+                      <label>
+                        Weekly cadence
+                        <input name="cadencePerWeek" type="number" min="1" max="7" />
+                      </label>
+
+                      <label>
+                        Context tags <span class="label-optional">(optional)</span>
+                        <input
+                          name="contextTags"
+                          type="text"
+                          placeholder="e.g. walk, coffee, market"
+                        />
+                      </label>
+
+                      <button class="primary-button wide-button" type="submit">Publish ritual</button>
+                    </form>
+                  </aside>
+                </div>
+              </details>
+
+              <details class="card lodge-accordion" id="accordion-errand">
+                <summary class="lodge-accordion-summary">
+                  <img
+                    class="lodge-accordion-logo"
+                    src="/lodge-logo.png"
+                    alt=""
+                    width="40"
+                    height="40"
+                    decoding="async"
+                  />
+                  <span class="lodge-accordion-heading">Want company for a quick errand?</span>
+                </summary>
+                <div class="lodge-accordion-panel">
+                  <section class="errands-sidebar-card" id="errands-card">
+                    <p class="card-hint lodge-panel-hint">We’ll ping if a neighbor’s ritual lines up.</p>
+                    <div id="errand-preset-row" class="preset-chip-row"></div>
+                    <label>
+                      Note <span class="label-optional">(optional)</span>
+                      <input type="text" id="errand-custom-label" placeholder="e.g. Roastery refill" />
+                    </label>
+                    <div class="split-fields">
+                      <label>
+                        Minutes
+                        <input type="number" id="errand-window" min="10" max="120" value="25" />
+                      </label>
+                      <label class="checkbox-inline">
+                        <input type="checkbox" id="errand-tag-along" checked />
+                        OK if someone joins
+                      </label>
+                    </div>
+                    <button type="button" class="primary-button wide-button" id="add-errand-btn">Log errand</button>
+                  </section>
+                </div>
+              </details>
+
+              <details class="card lodge-accordion" id="accordion-profile">
+                <summary class="lodge-accordion-summary">
+                  <img
+                    class="lodge-accordion-logo"
+                    src="/lodge-logo.png"
+                    alt=""
+                    width="40"
+                    height="40"
+                    decoding="async"
+                  />
+                  <span class="lodge-accordion-heading">Let us know what your interests are</span>
+                </summary>
+                <div class="lodge-accordion-panel">
                   <section
                     class="social-health-card"
                     id="social-health-card"
@@ -137,33 +188,10 @@
                       Wellbeing lens, not a dating score. Neighbors never see this number.
                     </p>
                   </section>
-                  <section class="workspace-recs-card" id="workspace-recs-card" hidden>
-                    <p class="eyebrow workspace-recs-eyebrow">Picked for you</p>
-                    <p class="workspace-recs-hint">
-                      Like Spotify or YouTube — from your history and signals, not generic blasts.
-                    </p>
-                    <ul id="workspace-recs-list" class="workspace-recs-list" aria-label="Personalized picks"></ul>
-                  </section>
-                  <section class="workspace-recs-card group-recs-card" id="group-recs-card" hidden>
-                    <p class="eyebrow workspace-recs-eyebrow">Suggested groups</p>
-                    <p class="workspace-recs-hint">
-                      Trios where you and two neighbors share a signal — small pods, not generic blasts.
-                    </p>
-                    <ul id="group-recs-list" class="workspace-recs-list" aria-label="Suggested small groups"></ul>
-                  </section>
-                  <section class="demo-personas-card" id="demo-personas-card" hidden>
-                    <p class="eyebrow demo-personas-eyebrow">Demo personas</p>
-                    <p class="demo-personas-hint">
-                      Ten labeled identities for pitch — same neighborhood, different angles.
-                    </p>
-                    <ul id="demo-personas-list" class="demo-personas-list" aria-label="Demo personas"></ul>
-                  </section>
                   <div id="hobby-chip-field" class="chip-field"></div>
                   <div id="quick-choice-fields" class="quick-choice-stack"></div>
                   <div class="willing-scale-block">
-                    <label class="range-label" for="willing-events-range">
-                      Open to local events
-                    </label>
+                    <label class="range-label" for="willing-events-range">Open to local events</label>
                     <div class="willing-scale-wrap">
                       <input
                         type="range"
@@ -187,14 +215,49 @@
                       <span class="willing-scale-meta">1 = low · 5 = very open</span>
                     </p>
                   </div>
-                  <button type="button" class="ghost-button wide-button" id="save-signals-btn">
-                    Save profile
-                  </button>
+                  <button type="button" class="ghost-button wide-button" id="save-signals-btn">Save profile</button>
                 </div>
               </details>
+
+              <section class="card build-inbox-card" id="notifications-card">
+                <h4 class="build-section-heading">Someone wants to join you…</h4>
+                <p class="card-hint">Accept or decline join requests for your open rituals.</p>
+                <div id="rsvp-inbox-list" class="rsvp-inbox-list"></div>
+              </section>
+
+              <section class="card my-activity-card" id="my-activity-card">
+                <h4 class="build-section-heading">What have we already planned?</h4>
+                <div id="my-activity-body" class="my-activity-body"></div>
+                <div id="my-favorites-block" class="my-favorites-block" hidden>
+                  <p class="eyebrow favorites-label">Saved errands</p>
+                  <div id="my-favorites-list" class="my-favorites-list"></div>
+                </div>
+              </section>
+
+              <section class="card events-sidebar-card" id="events-sidebar">
+                <h4 class="build-section-heading">What’s happening in the coming week?</h4>
+                <p class="card-hint events-sidebar-hint">
+                  Opt in, then RSVP if you like — host accepts or declines.
+                </p>
+                <div id="nearby-events-list" class="map-events-list events-sidebar-list"></div>
+              </section>
+
+              <section class="card concierge-card concierge-card--open" id="concierge-card">
+                <h4 class="build-section-heading">How can we help you?</h4>
+                <p class="concierge-sub">Chat for wording and plans — not match scores.</p>
+                <div class="concierge-body">
+                  <div id="concierge-thread" class="concierge-thread" aria-live="polite"></div>
+                  <label class="concierge-label">
+                    Message
+                    <textarea id="concierge-input" rows="3" placeholder="e.g. How do I invite someone to a walk without sounding formal?"></textarea>
+                  </label>
+                  <button type="button" class="primary-button wide-button" id="concierge-send">Send</button>
+                  <p id="concierge-status" class="concierge-status" hidden></p>
+                </div>
+              </section>
             </div>
 
-            <section class="card map-card map-card-with-events">
+            <section class="card map-card map-card-with-events build-map-section">
               <div class="card-header">
                 <div>
                   <p class="eyebrow">Map</p>
@@ -202,7 +265,7 @@
                 </div>
                 <div class="map-controls">
                   <button class="map-button" id="zoom-in" type="button">+</button>
-                  <button class="map-button" id="zoom-out" type="button">-</button>
+                  <button class="map-button" id="zoom-out" type="button">−</button>
                 </div>
               </div>
 
@@ -262,132 +325,58 @@
                 </div>
 
                 <div class="map-posts-section" id="map-posts-section">
-                  <p class="map-posts-section-title">Open rituals (this map view)</p>
+                  <p class="map-posts-section-title">Open rituals</p>
                   <p class="map-posts-section-hint">
-                    Tap a card to focus the pin. Send an RSVP to ask the host if you can join their ritual.
+                    Tap a card to focus the pin. RSVP to ask the host if you can join.
                   </p>
                   <div class="map-posts-row" id="post-list" role="list"></div>
-                </div>
-
-                <section class="card trust-repeat-card trust-repeat-card--map-column" id="trust-repeat-card">
-                  <div class="card-header">
-                    <div>
-                      <p class="eyebrow">People you know</p>
-                      <strong>Past link-ups</strong>
-                    </div>
-                  </div>
-                  <p class="fun-fact-rotator" id="fun-fact-rotator" aria-live="polite"></p>
-                  <div id="bonds-row" class="bonds-row" role="list"></div>
-                  <div class="empty-with-mascot bonds-empty-with-mascot" id="bonds-empty" hidden>
-                    <span class="lodge-mascot-wrap lodge-mascot-wrap--tiny lodge-mascot-wrap--still" aria-hidden="true">
-                      <img
-                        class="lodge-mascot-img"
-                        src="/lodge-mascot.svg"
-                        width="38"
-                        height="38"
-                        alt=""
-                        decoding="async"
-                      />
-                    </span>
-                    <p class="bonds-empty-text">No link-ups in demo data.</p>
-                  </div>
-                </section>
-
-                <div class="repeats-under-map" id="repeats-under-map">
-                  <p class="repeats-under-map-title">Repeat something familiar</p>
-                  <p class="repeats-under-map-hint">Fills the composer on the left.</p>
-                  <div id="repeat-template-chips" class="repeat-template-chips repeat-template-chips--inline"></div>
                 </div>
               </div>
             </section>
 
-            <aside class="sidebar-stack">
-              <div id="live-toast-host" class="live-toast-host" aria-live="polite"></div>
+            <section class="card people-nearby-card" aria-labelledby="people-nearby-heading">
+              <h3 id="people-nearby-heading" class="people-nearby-title">People nearby</h3>
 
-              <section class="card errands-sidebar-card" id="errands-card">
-                <div class="card-header">
-                  <div>
-                    <p class="eyebrow">Errand</p>
-                    <h4>Running out soon?</h4>
-                  </div>
-                  <span class="pill">Tag-along</span>
-                </div>
-                <p class="card-hint">We’ll ping if a neighbor’s ritual lines up.</p>
-                <div id="errand-preset-row" class="preset-chip-row"></div>
-                <label>
-                  Note <span class="label-optional">(optional)</span>
-                  <input type="text" id="errand-custom-label" placeholder="e.g. Roastery refill" />
-                </label>
-                <div class="split-fields">
-                  <label>
-                    Minutes
-                    <input type="number" id="errand-window" min="10" max="120" value="25" />
-                  </label>
-                  <label class="checkbox-inline">
-                    <input type="checkbox" id="errand-tag-along" checked />
-                    OK if someone joins
-                  </label>
-                </div>
-                <button type="button" class="primary-button wide-button" id="add-errand-btn">
-                  Log errand
-                </button>
-              </section>
-
-              <section class="card notifications-card" id="notifications-card">
-                <div class="card-header">
-                  <div>
-                    <p class="eyebrow">Inbox</p>
-                    <h4>RSVP requests</h4>
-                  </div>
-                </div>
-                <p class="card-hint">Accept or decline join requests for your events and open rituals.</p>
-                <div id="rsvp-inbox-list" class="rsvp-inbox-list"></div>
-              </section>
-
-              <section class="card events-sidebar-card" id="events-sidebar">
-                <div class="card-header">
-                  <div>
-                    <p class="eyebrow">Events</p>
-                    <h4>Nearby</h4>
-                  </div>
-                </div>
-                <p class="card-hint events-sidebar-hint">
-                  Check the box, optionally hide your request until 2 days before, then send RSVP. Host accepts or declines.
-                </p>
-                <div id="nearby-events-list" class="map-events-list events-sidebar-list"></div>
-              </section>
-
-              <section class="card my-activity-card" id="my-activity-card">
-                <div class="card-header">
-                  <div>
-                    <p class="eyebrow">You</p>
-                    <h4>My activity</h4>
-                  </div>
-                </div>
-                <div id="my-activity-body" class="my-activity-body"></div>
-                <div id="my-favorites-block" class="my-favorites-block" hidden>
-                  <p class="eyebrow favorites-label">Saved errands</p>
-                  <div id="my-favorites-list" class="my-favorites-list"></div>
+              <section class="trust-repeat-card trust-repeat-card--people" id="trust-repeat-card">
+                <p class="fun-fact-rotator" id="fun-fact-rotator" aria-live="polite"></p>
+                <div id="bonds-row" class="bonds-row" role="list"></div>
+                <div class="empty-with-mascot bonds-empty-with-mascot" id="bonds-empty" hidden>
+                  <span class="lodge-mascot-wrap lodge-mascot-wrap--tiny lodge-mascot-wrap--still" aria-hidden="true">
+                    <img
+                      class="lodge-mascot-img"
+                      src="/lodge-mascot.svg"
+                      width="38"
+                      height="38"
+                      alt=""
+                      decoding="async"
+                    />
+                  </span>
+                  <p class="bonds-empty-text">No link-ups in demo data.</p>
                 </div>
               </section>
 
-              <details class="card concierge-card" id="concierge-card">
-                <summary class="concierge-summary">
-                  <span class="eyebrow">Concierge</span>
-                  <strong>Words &amp; invites (AI)</strong>
-                  <span class="concierge-sub">Not match scores — help with phrasing &amp; plans.</span>
-                </summary>
-                <div class="concierge-body">
-                  <div id="concierge-thread" class="concierge-thread" aria-live="polite"></div>
-                  <label class="concierge-label">
-                    Message
-                    <textarea id="concierge-input" rows="3" placeholder="e.g. How do I invite someone to a walk without sounding formal?"></textarea>
-                  </label>
-                  <button type="button" class="primary-button wide-button" id="concierge-send">Send</button>
-                  <p id="concierge-status" class="concierge-status" hidden></p>
-                </div>
-              </details>
-            </aside>
+              <div class="rec-subsection" id="group-recs-card" hidden>
+                <h4 class="rec-subsection-title">Match your vibe</h4>
+                <p class="rec-subsection-hint">Small groups where your signals line up.</p>
+                <ul id="group-recs-list" class="workspace-recs-list" aria-label="Group matches"></ul>
+              </div>
+
+              <div class="rec-subsection" id="workspace-vibe-card" hidden>
+                <p class="rec-subsection-lead">Similar rhythm</p>
+                <ul id="workspace-vibe-recs-list" class="workspace-recs-list" aria-label="Similar taste"></ul>
+              </div>
+
+              <div class="rec-subsection" id="workspace-recs-history-card" hidden>
+                <h4 class="rec-subsection-title">Because you’ve done this before — want to join?</h4>
+                <ul id="workspace-recs-history-list" class="workspace-recs-list" aria-label="History picks"></ul>
+              </div>
+
+              <div class="repeats-under-map repeats-under-map--people" id="repeats-under-map">
+                <h4 class="rec-subsection-title">Repeat since you liked it</h4>
+                <p class="repeats-under-map-hint">Fills the post form above.</p>
+                <div id="repeat-template-chips" class="repeat-template-chips repeat-template-chips--inline"></div>
+              </div>
+            </section>
           </div>
         </section>
       </main>

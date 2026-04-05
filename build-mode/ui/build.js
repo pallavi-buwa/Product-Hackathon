@@ -30,8 +30,7 @@ const state = {
   livingMap: { heatZones: [], generationMode: "template", copy: {} },
   privateSocialHealth: null,
   workspaceRecommendations: [],
-  groupRecommendations: [],
-  demoPersonas: []
+  groupRecommendations: []
 };
 
 const elements = {
@@ -85,12 +84,12 @@ const elements = {
   socialHealthScoreRow: document.querySelector("#social-health-score-row"),
   socialHealthScoreValue: document.querySelector("#social-health-score-value"),
   socialHealthBand: document.querySelector("#social-health-band"),
-  workspaceRecsCard: document.querySelector("#workspace-recs-card"),
-  workspaceRecsList: document.querySelector("#workspace-recs-list"),
+  workspaceVibeCard: document.querySelector("#workspace-vibe-card"),
+  workspaceVibeRecsList: document.querySelector("#workspace-vibe-recs-list"),
+  workspaceRecsHistoryCard: document.querySelector("#workspace-recs-history-card"),
+  workspaceRecsHistoryList: document.querySelector("#workspace-recs-history-list"),
   groupRecsCard: document.querySelector("#group-recs-card"),
   groupRecsList: document.querySelector("#group-recs-list"),
-  demoPersonasCard: document.querySelector("#demo-personas-card"),
-  demoPersonasList: document.querySelector("#demo-personas-list"),
   friendBloomLayer: document.querySelector("#friend-bloom-layer")
 };
 
@@ -1208,26 +1207,41 @@ function renderPrivateSocialHealth() {
   elements.socialHealthBody.textContent = block.narrative;
 }
 
-function renderWorkspaceRecommendations() {
-  const list = state.workspaceRecommendations || [];
-  if (!elements.workspaceRecsList || !elements.workspaceRecsCard) {
-    return;
-  }
-  if (!list.length) {
-    elements.workspaceRecsCard.hidden = true;
-    return;
-  }
-  elements.workspaceRecsCard.hidden = false;
-  elements.workspaceRecsList.innerHTML = list
-    .map(
-      (item) => `
+function recItemMarkup(item) {
+  return `
       <li class="workspace-recs-item">
         <p class="workspace-recs-title">${escapeHtml(item.title)}</p>
         <p class="workspace-recs-sub">${escapeHtml(item.subtitle || "")}</p>
         <p class="workspace-recs-reason">${escapeHtml(item.reason)}</p>
-      </li>`
-    )
-    .join("");
+      </li>`;
+}
+
+/** Solo picks: overlap / taste (not repeat-history lines). */
+function renderWorkspaceVibeRecommendations() {
+  const list = (state.workspaceRecommendations || []).filter((i) => i.kind !== "history");
+  if (!elements.workspaceVibeRecsList || !elements.workspaceVibeCard) {
+    return;
+  }
+  if (!list.length) {
+    elements.workspaceVibeCard.hidden = true;
+    return;
+  }
+  elements.workspaceVibeCard.hidden = false;
+  elements.workspaceVibeRecsList.innerHTML = list.map((item) => recItemMarkup(item)).join("");
+}
+
+/** “Meet again” lines from shared ritual history. */
+function renderWorkspaceHistoryRecommendations() {
+  const list = (state.workspaceRecommendations || []).filter((i) => i.kind === "history");
+  if (!elements.workspaceRecsHistoryList || !elements.workspaceRecsHistoryCard) {
+    return;
+  }
+  if (!list.length) {
+    elements.workspaceRecsHistoryCard.hidden = true;
+    return;
+  }
+  elements.workspaceRecsHistoryCard.hidden = false;
+  elements.workspaceRecsHistoryList.innerHTML = list.map((item) => recItemMarkup(item)).join("");
 }
 
 function renderGroupRecommendations() {
@@ -1240,46 +1254,23 @@ function renderGroupRecommendations() {
     return;
   }
   elements.groupRecsCard.hidden = false;
-  elements.groupRecsList.innerHTML = list
-    .map(
-      (item) => `
-      <li class="workspace-recs-item">
-        <p class="workspace-recs-title">${escapeHtml(item.title)}</p>
-        <p class="workspace-recs-sub">${escapeHtml(item.subtitle || "")}</p>
-        <p class="workspace-recs-reason">${escapeHtml(item.reason)}</p>
-      </li>`
-    )
-    .join("");
+  elements.groupRecsList.innerHTML = list.map((item) => recItemMarkup(item)).join("");
 }
 
-function renderDemoPersonas() {
-  const rows = state.demoPersonas || [];
-  if (!elements.demoPersonasList || !elements.demoPersonasCard) {
-    return;
-  }
-  if (!rows.length) {
-    elements.demoPersonasCard.hidden = true;
-    return;
-  }
-  elements.demoPersonasCard.hidden = false;
-  elements.demoPersonasList.innerHTML = rows
-    .map((p) => {
-      const tagLine = [p.archetype, p.socialEnergyLevel ? `${p.socialEnergyLevel} energy` : null]
-        .filter(Boolean)
-        .join(" · ");
-      const chips = [...(p.interests || []).slice(0, 4), ...(p.hobbies || []).slice(0, 2)]
-        .filter(Boolean)
-        .map((t) => `<span class="demo-persona-chip">${escapeHtml(t)}</span>`)
-        .join("");
-      return `
-      <li class="demo-persona-item">
-        <p class="demo-persona-name">${escapeHtml(p.firstName)}${p.id === "viewer" ? " (you)" : ""}</p>
-        <p class="demo-persona-tagline">${escapeHtml(tagLine)}</p>
-        <p class="demo-persona-pitch">${escapeHtml(p.pitch || "")}</p>
-        ${chips ? `<div class="demo-persona-chips">${chips}</div>` : ""}
-      </li>`;
-    })
-    .join("");
+function installExclusiveAccordions() {
+  const accordions = document.querySelectorAll("details.lodge-accordion");
+  accordions.forEach((det) => {
+    det.addEventListener("toggle", () => {
+      if (!det.open) {
+        return;
+      }
+      accordions.forEach((other) => {
+        if (other !== det) {
+          other.open = false;
+        }
+      });
+    });
+  });
 }
 
 function renderErrandPresets() {
@@ -1386,15 +1377,13 @@ function installSignalsAndErrands() {
         state.bootstrap.privateSocialHealth = boot.privateSocialHealth;
         state.bootstrap.workspaceRecommendations = boot.workspaceRecommendations || [];
         state.bootstrap.groupRecommendations = boot.groupRecommendations || [];
-        state.bootstrap.demoPersonas = boot.demoPersonas || [];
         state.privateSocialHealth = boot.privateSocialHealth || null;
         state.workspaceRecommendations = boot.workspaceRecommendations || [];
         state.groupRecommendations = boot.groupRecommendations || [];
-        state.demoPersonas = boot.demoPersonas || [];
         renderPrivateSocialHealth();
-        renderWorkspaceRecommendations();
+        renderWorkspaceVibeRecommendations();
+        renderWorkspaceHistoryRecommendations();
         renderGroupRecommendations();
-        renderDemoPersonas();
       } catch (e2) {
         console.error(e2);
       }
@@ -2125,15 +2114,15 @@ async function initialize() {
   state.privateSocialHealth = state.bootstrap.privateSocialHealth || null;
   state.workspaceRecommendations = state.bootstrap.workspaceRecommendations || [];
   state.groupRecommendations = state.bootstrap.groupRecommendations || [];
-  state.demoPersonas = state.bootstrap.demoPersonas || [];
 
   elements.workspaceTitle.textContent =
     state.bootstrap.brand?.promise || "Browse routines around you and post your own anchor.";
 
   renderPrivateSocialHealth();
-  renderWorkspaceRecommendations();
+  renderWorkspaceVibeRecommendations();
+  renderWorkspaceHistoryRecommendations();
   renderGroupRecommendations();
-  renderDemoPersonas();
+  installExclusiveAccordions();
   installComposer();
   installTrustRepeatPanel();
   renderRsvpInbox();
