@@ -4,6 +4,7 @@ import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DemoBuildModeApp } from "./demoBuildApp.js";
+import { analyzeRoutines, findCombos, findWorst, weeklyInsight } from "./socialOpportunityMap.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -138,6 +139,35 @@ export function createServer({ port = 3030 } = {}) {
         const payload = await readJsonBody(request);
         const created = await app.createPost(payload);
         return sendJson(response, 201, created);
+      }
+
+      // Social Opportunity Map — cross-analyze full weekly routine
+      if (request.method === "POST" && pathname === "/api/social-map") {
+        const { routines, city, name: userName } = await readJsonBody(request);
+        if (!routines || !Array.isArray(routines) || routines.length < 2) {
+          return sendJson(response, 400, { error: "At least 2 routines required" });
+        }
+        const ranked = analyzeRoutines(routines);
+        const combos = findCombos(ranked);
+        const worst = findWorst(ranked);
+        const insight = weeklyInsight(ranked);
+        return sendJson(response, 200, {
+          socialMap: { opportunities: ranked, combos, worst_candidate: worst, weekly_insight: insight },
+          meta: { city, name: userName, analyzed: routines.length },
+        });
+      }
+
+      // Inject Mapbox token into social-map page
+      if (request.method === "GET" && (pathname === "/social-map" || pathname === "/social-map.html")) {
+        let html = await readFile(path.join(uiDir, "social-map.html"), "utf-8");
+        const mbToken = process.env.MAPBOX_TOKEN || "";
+        html = html.replace(
+          'window.__MAPBOX_TOKEN || ""',
+          `"${mbToken}"`
+        );
+        response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        response.end(html);
+        return;
       }
 
       if (request.method === "GET") {
