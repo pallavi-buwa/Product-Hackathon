@@ -20,6 +20,7 @@ function isoMinutesFrom(baseDate, minutes) {
 function materializeSeed(seed, now = new Date()) {
   return {
     brand: cloneJson(seed.brand || {}),
+    globeSignals: cloneJson(seed.globeSignals || []),
     viewport: cloneJson(seed.viewport || {}),
     mapPlaces: cloneJson(seed.mapPlaces || []),
     routineTypeOptions: cloneJson(seed.routineTypeOptions || []),
@@ -59,6 +60,7 @@ function materializeSeed(seed, now = new Date()) {
 function sanitizeState(state) {
   return {
     brand: cloneJson(state.brand || {}),
+    globeSignals: cloneJson(state.globeSignals || []),
     viewport: cloneJson(state.viewport || {}),
     mapPlaces: cloneJson(state.mapPlaces || []),
     routineTypeOptions: cloneJson(state.routineTypeOptions || []),
@@ -118,6 +120,7 @@ export class BuildModeDataStore {
     return {
       ...seed,
       ...rt,
+      globeSignals: seed.globeSignals?.length ? seed.globeSignals : rt.globeSignals,
       errandPresets: seed.errandPresets?.length ? seed.errandPresets : rt.errandPresets,
       hobbyOptions: seed.hobbyOptions?.length ? seed.hobbyOptions : rt.hobbyOptions,
       quickChoices: seed.quickChoices?.length ? seed.quickChoices : rt.quickChoices,

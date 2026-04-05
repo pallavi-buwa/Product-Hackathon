@@ -92,6 +92,37 @@ function getDefaultViewport(state) {
   };
 }
 
+function clampLat(lat) {
+  return Math.max(-84, Math.min(84, lat));
+}
+
+function wrapLng(lng) {
+  let value = lng;
+  while (value > 180) value -= 360;
+  while (value < -180) value += 360;
+  return value;
+}
+
+function expandGlobeSignals(signals = []) {
+  const offsets = [
+    { lat: 0, lng: 0 },
+    { lat: 0.82, lng: 1.26 },
+    { lat: -0.94, lng: -1.18 },
+    { lat: 0.58, lng: -1.44 }
+  ];
+
+  return signals.flatMap((signal, index) => {
+    const scale = 0.55 + (index % 4) * 0.18;
+    return offsets.map((offset, variant) => ({
+      id: `${signal.id}-${variant}`,
+      label: signal.label,
+      subtitle: signal.subtitle,
+      lat: clampLat(signal.lat + offset.lat * scale),
+      lng: wrapLng(signal.lng + offset.lng * scale)
+    }));
+  });
+}
+
 function toPostSummary({ post, profile, center }) {
   const distanceMiles = center ? haversineMiles(center, post.startLocation) : null;
 
@@ -240,6 +271,7 @@ export class DemoBuildModeApp {
 
     return {
       brand: this.state.brand,
+      globeSignals: expandGlobeSignals(this.state.globeSignals || []),
       viewer: this.getProfile(this.state.viewerId),
       viewport,
       mapPlaces: this.state.mapPlaces,

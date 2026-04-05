@@ -9,8 +9,6 @@ const state = {
 const elements = {
   heroTitle: document.querySelector("#hero-title"),
   heroText: document.querySelector("#hero-text"),
-  heroMetrics: document.querySelector("#hero-metrics"),
-  focusFeatured: document.querySelector("#focus-featured"),
   globeMap: document.querySelector("#globe-map")
 };
 
@@ -26,47 +24,41 @@ async function requestJson(url, options = {}) {
 
 function renderBrandCopy() {
   const brand = state.bootstrap?.brand || {};
-  elements.heroTitle.textContent = brand.heroTitle || brand.promise || "Build shared rituals";
+  elements.heroTitle.textContent =
+    brand.heroTitle || brand.promise || "Let everyday routines feel a little less solitary.";
   elements.heroText.textContent =
-    brand.heroText || "Lodge helps you turn ordinary routines into something shared.";
-}
-
-function renderHeroMetrics() {
-  const stats = state.liveFeed.stats || {};
-  elements.heroMetrics.innerHTML = [
-    { label: "Open posts", value: stats.openPosts ?? 0 },
-    { label: "Routine neighbors", value: stats.activeNeighbors ?? 0 },
-    { label: "Timely nudges", value: stats.liveNudges ?? 0 }
-  ]
-    .map(
-      (item) =>
-        `<div class="metric-chip"><strong>${item.value}</strong>${item.label}</div>`
-    )
-    .join("");
+    brand.heroText || "Lodge helps you share the quiet parts of everyday life.";
 }
 
 function globeGeoJson() {
-  const posts = state.bootstrap?.featuredPosts || [];
+  const signals = state.bootstrap?.globeSignals?.length
+    ? state.bootstrap.globeSignals
+    : (state.bootstrap?.featuredPosts || []).map((post) => ({
+      id: post.id,
+      label: post.label,
+      subtitle: `${post.creatorName} near ${post.localSpotName}`,
+      lat: post.startLocation.lat,
+      lng: post.startLocation.lng
+    }));
   return {
     type: "FeatureCollection",
-    features: posts.slice(0, 10).map((post) => ({
+    features: signals.map((signal) => ({
       type: "Feature",
       geometry: {
         type: "Point",
-        coordinates: [post.startLocation.lng, post.startLocation.lat]
+        coordinates: [signal.lng, signal.lat]
       },
       properties: {
-        id: post.id,
-        label: post.label,
-        creatorName: post.creatorName,
-        spot: post.localSpotName
+        id: signal.id,
+        label: signal.label,
+        subtitle: signal.subtitle || ""
       }
     }))
   };
 }
 
 function installGlobeMarkers() {
-  if (!state.globeMap || !state.bootstrap?.featuredPosts?.length) {
+  if (!state.globeMap || !globeGeoJson().features.length) {
     return;
   }
 
@@ -85,9 +77,9 @@ function installGlobeMarkers() {
     type: "circle",
     source: "featured-posts",
     paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 0, 6, 3, 9],
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 0, 3.2, 2, 5.4],
       "circle-color": "#D4A72C",
-      "circle-opacity": 0.26,
+      "circle-opacity": 0.38,
       "circle-blur": 0.9
     }
   });
@@ -97,9 +89,9 @@ function installGlobeMarkers() {
     type: "circle",
     source: "featured-posts",
     paint: {
-      "circle-radius": ["interpolate", ["linear"], ["zoom"], 0, 1.8, 3, 3.2],
+      "circle-radius": ["interpolate", ["linear"], ["zoom"], 0, 0.95, 2, 1.8],
       "circle-color": "#FFF4C7",
-      "circle-stroke-width": 1,
+      "circle-stroke-width": 0.8,
       "circle-stroke-color": "#D4A72C"
     }
   });
@@ -128,7 +120,7 @@ function installGlobeMarkers() {
     popup
       .setLngLat(feature.geometry.coordinates)
       .setHTML(
-        `<strong>${feature.properties.label}</strong><br />${feature.properties.creatorName} near ${feature.properties.spot}`
+        `<strong>${feature.properties.label}</strong><br />${feature.properties.subtitle}`
       )
       .addTo(state.globeMap);
   });
@@ -143,8 +135,8 @@ function installGlobe() {
   state.globeMap = new mapboxgl.Map({
     container: elements.globeMap,
     style: "mapbox://styles/mapbox/satellite-v9",
-    center: [-25, 24],
-    zoom: 1.45,
+    center: [-100, 38],
+    zoom: 1.8,
     projection: "globe",
     interactive: true,
     attributionControl: false,
@@ -171,24 +163,10 @@ function installGlobe() {
   });
 }
 
-function installActions() {
-  elements.focusFeatured.addEventListener("click", () => {
-    const featured = state.bootstrap?.featuredPosts?.[0];
-    if (!featured) {
-      window.location.href = "/build";
-      return;
-    }
-
-    window.location.href = `/build?focus=${encodeURIComponent(featured.id)}`;
-  });
-}
-
 async function initialize() {
   state.bootstrap = await requestJson("/api/bootstrap");
   state.liveFeed = state.bootstrap.liveFeed;
   renderBrandCopy();
-  renderHeroMetrics();
-  installActions();
   installGlobe();
 }
 

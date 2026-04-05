@@ -194,7 +194,6 @@ a {
 }
 
 .hero-actions,
-.hero-metrics,
 .section-status,
 .map-controls,
 .map-legend,
@@ -676,10 +675,6 @@ a {
   justify-content: center;
 }
 
-.hero-metrics {
-  margin-top: 22px;
-}
-
 .metric-chip,
 .pill,
 .section-status span {
@@ -698,6 +693,14 @@ a {
 
 .hero-visual {
   position: relative;
+}
+
+.hero-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 520px;
+  margin-top: 22px;
 }
 
 .globe-card,
@@ -787,6 +790,21 @@ a {
 
 .feature-card {
   min-height: 220px;
+}
+
+.compact-feature-card {
+  min-height: 0;
+  padding: 14px 16px;
+}
+
+.compact-feature-card .eyebrow {
+  margin-bottom: 4px;
+}
+
+.compact-feature-card h4 {
+  margin-bottom: 0;
+  font-size: 1rem;
+  line-height: 1.28;
 }
 
 .feature-card p:last-child {
@@ -1514,6 +1532,10 @@ a {
 
   .hero-copy h2 {
     font-size: 2.65rem;
+  }
+
+  .hero-feature-grid {
+    grid-template-columns: 1fr;
   }
 
   .globe-card {
