@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { computeSocialHealthMetrics, startOfWeekMonday } from "../src/socialHealthScore.js";
+import {
+  buildDemoViewerRoutineLogs,
+  computeSocialHealthMetrics,
+  computeSocialHealthScore,
+  startOfWeekMonday
+} from "../src/socialHealthScore.js";
 import { buildTemplateSocialHealthNarrative } from "../src/socialHealthNarrative.js";
 
 test("computeSocialHealthMetrics buckets viewer logs by week (Monday start)", () => {
@@ -30,8 +35,25 @@ test("startOfWeekMonday returns Monday 00:00 local", () => {
 test("buildTemplateSocialHealthNarrative mentions counts and trend", () => {
   const text = buildTemplateSocialHealthNarrative(
     { meaningfulEncountersThisWeek: 3, meaningfulEncountersLastWeek: 1, weekStartsOn: "2026-03-30" },
-    { firstName: "You" }
+    { firstName: "Riley" }
   );
   assert.match(text, /3/);
   assert.match(text, /1 last week/i);
+});
+
+test("computeSocialHealthScore returns bounded score and band", () => {
+  const s = computeSocialHealthScore({
+    meaningfulEncountersThisWeek: 3,
+    meaningfulEncountersLastWeek: 1
+  });
+  assert.equal(s.score >= 0 && s.score <= 100, true);
+  assert.match(s.band, /Thriving|Steady|Finding rhythm/);
+});
+
+test("buildDemoViewerRoutineLogs yields 3 this week and 1 last week", () => {
+  const now = new Date("2026-04-04T12:00:00-04:00");
+  const logs = buildDemoViewerRoutineLogs(now, "viewer");
+  const m = computeSocialHealthMetrics({ viewerId: "viewer", routineLogs: logs, now });
+  assert.equal(m.meaningfulEncountersThisWeek, 3);
+  assert.equal(m.meaningfulEncountersLastWeek, 1);
 });

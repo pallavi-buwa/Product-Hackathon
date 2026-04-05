@@ -28,7 +28,10 @@ const state = {
   _pinTooltipTimer: null,
   _pinTooltipHideTimer: null,
   livingMap: { heatZones: [], generationMode: "template", copy: {} },
-  privateSocialHealth: null
+  privateSocialHealth: null,
+  workspaceRecommendations: [],
+  groupRecommendations: [],
+  demoPersonas: []
 };
 
 const elements = {
@@ -79,6 +82,15 @@ const elements = {
   conciergeStatus: document.querySelector("#concierge-status"),
   socialHealthBody: document.querySelector("#social-health-body"),
   socialHealthCard: document.querySelector("#social-health-card"),
+  socialHealthScoreRow: document.querySelector("#social-health-score-row"),
+  socialHealthScoreValue: document.querySelector("#social-health-score-value"),
+  socialHealthBand: document.querySelector("#social-health-band"),
+  workspaceRecsCard: document.querySelector("#workspace-recs-card"),
+  workspaceRecsList: document.querySelector("#workspace-recs-list"),
+  groupRecsCard: document.querySelector("#group-recs-card"),
+  groupRecsList: document.querySelector("#group-recs-list"),
+  demoPersonasCard: document.querySelector("#demo-personas-card"),
+  demoPersonasList: document.querySelector("#demo-personas-list"),
   friendBloomLayer: document.querySelector("#friend-bloom-layer")
 };
 
@@ -1175,10 +1187,99 @@ function renderPrivateSocialHealth() {
   }
   if (!block?.narrative) {
     elements.socialHealthCard.hidden = true;
+    if (elements.socialHealthScoreRow) {
+      elements.socialHealthScoreRow.hidden = true;
+    }
     return;
   }
   elements.socialHealthCard.hidden = false;
+  const m = block.metrics || {};
+  const score = typeof m.score === "number" ? m.score : null;
+  const band = m.band || "";
+  if (elements.socialHealthScoreRow && elements.socialHealthScoreValue && elements.socialHealthBand) {
+    if (score != null) {
+      elements.socialHealthScoreValue.textContent = String(score);
+      elements.socialHealthBand.textContent = band ? `${band} · this week vs last` : "";
+      elements.socialHealthScoreRow.hidden = false;
+    } else {
+      elements.socialHealthScoreRow.hidden = true;
+    }
+  }
   elements.socialHealthBody.textContent = block.narrative;
+}
+
+function renderWorkspaceRecommendations() {
+  const list = state.workspaceRecommendations || [];
+  if (!elements.workspaceRecsList || !elements.workspaceRecsCard) {
+    return;
+  }
+  if (!list.length) {
+    elements.workspaceRecsCard.hidden = true;
+    return;
+  }
+  elements.workspaceRecsCard.hidden = false;
+  elements.workspaceRecsList.innerHTML = list
+    .map(
+      (item) => `
+      <li class="workspace-recs-item">
+        <p class="workspace-recs-title">${escapeHtml(item.title)}</p>
+        <p class="workspace-recs-sub">${escapeHtml(item.subtitle || "")}</p>
+        <p class="workspace-recs-reason">${escapeHtml(item.reason)}</p>
+      </li>`
+    )
+    .join("");
+}
+
+function renderGroupRecommendations() {
+  const list = state.groupRecommendations || [];
+  if (!elements.groupRecsList || !elements.groupRecsCard) {
+    return;
+  }
+  if (!list.length) {
+    elements.groupRecsCard.hidden = true;
+    return;
+  }
+  elements.groupRecsCard.hidden = false;
+  elements.groupRecsList.innerHTML = list
+    .map(
+      (item) => `
+      <li class="workspace-recs-item">
+        <p class="workspace-recs-title">${escapeHtml(item.title)}</p>
+        <p class="workspace-recs-sub">${escapeHtml(item.subtitle || "")}</p>
+        <p class="workspace-recs-reason">${escapeHtml(item.reason)}</p>
+      </li>`
+    )
+    .join("");
+}
+
+function renderDemoPersonas() {
+  const rows = state.demoPersonas || [];
+  if (!elements.demoPersonasList || !elements.demoPersonasCard) {
+    return;
+  }
+  if (!rows.length) {
+    elements.demoPersonasCard.hidden = true;
+    return;
+  }
+  elements.demoPersonasCard.hidden = false;
+  elements.demoPersonasList.innerHTML = rows
+    .map((p) => {
+      const tagLine = [p.archetype, p.socialEnergyLevel ? `${p.socialEnergyLevel} energy` : null]
+        .filter(Boolean)
+        .join(" · ");
+      const chips = [...(p.interests || []).slice(0, 4), ...(p.hobbies || []).slice(0, 2)]
+        .filter(Boolean)
+        .map((t) => `<span class="demo-persona-chip">${escapeHtml(t)}</span>`)
+        .join("");
+      return `
+      <li class="demo-persona-item">
+        <p class="demo-persona-name">${escapeHtml(p.firstName)}${p.id === "viewer" ? " (you)" : ""}</p>
+        <p class="demo-persona-tagline">${escapeHtml(tagLine)}</p>
+        <p class="demo-persona-pitch">${escapeHtml(p.pitch || "")}</p>
+        ${chips ? `<div class="demo-persona-chips">${chips}</div>` : ""}
+      </li>`;
+    })
+    .join("");
 }
 
 function renderErrandPresets() {
@@ -1280,6 +1381,23 @@ function installSignalsAndErrands() {
       state.bootstrap.viewer = next;
       showLiveToast("Signals saved — matches refreshed.");
       await refreshNeighborMatches();
+      try {
+        const boot = await requestJson("/api/bootstrap");
+        state.bootstrap.privateSocialHealth = boot.privateSocialHealth;
+        state.bootstrap.workspaceRecommendations = boot.workspaceRecommendations || [];
+        state.bootstrap.groupRecommendations = boot.groupRecommendations || [];
+        state.bootstrap.demoPersonas = boot.demoPersonas || [];
+        state.privateSocialHealth = boot.privateSocialHealth || null;
+        state.workspaceRecommendations = boot.workspaceRecommendations || [];
+        state.groupRecommendations = boot.groupRecommendations || [];
+        state.demoPersonas = boot.demoPersonas || [];
+        renderPrivateSocialHealth();
+        renderWorkspaceRecommendations();
+        renderGroupRecommendations();
+        renderDemoPersonas();
+      } catch (e2) {
+        console.error(e2);
+      }
     } catch (e) {
       console.error(e);
       showLiveToast(e.message || "Save failed");
@@ -1600,6 +1718,49 @@ function markerElementForPost(post) {
   return marker;
 }
 
+/**
+ * Open rituals often share the exact anchor lat/lng in seed data; Mapbox markers
+ * stack, so only the top pin is visible. Spread duplicates in a small ring so
+ * each host stays clickable.
+ */
+function pinSpreadOffsetsByPostId(posts) {
+  const keyOf = (loc) => {
+    if (!loc || typeof loc.lat !== "number" || typeof loc.lng !== "number") {
+      return null;
+    }
+    return `${loc.lat.toFixed(5)},${loc.lng.toFixed(5)}`;
+  };
+  const buckets = new Map();
+  for (const post of posts) {
+    const k = keyOf(post.startLocation);
+    if (k == null) {
+      continue;
+    }
+    if (!buckets.has(k)) {
+      buckets.set(k, []);
+    }
+    buckets.get(k).push(post);
+  }
+  const out = new Map();
+  for (const group of buckets.values()) {
+    const sorted = [...group].sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    const n = sorted.length;
+    if (n === 1) {
+      out.set(sorted[0].id, { lat: 0, lng: 0 });
+      continue;
+    }
+    const radius = 0.00013;
+    sorted.forEach((p, i) => {
+      const angle = (2 * Math.PI * i) / n;
+      out.set(p.id, {
+        lat: radius * Math.sin(angle),
+        lng: radius * Math.cos(angle)
+      });
+    });
+  }
+  return out;
+}
+
 function renderMapMarkers() {
   if (!state.map) {
     return;
@@ -1607,12 +1768,21 @@ function renderMapMarkers() {
 
   clearMarkers();
 
+  const spread = pinSpreadOffsetsByPostId(state.posts);
+
   for (const post of state.posts) {
+    if (!post.startLocation) {
+      continue;
+    }
+    const o = spread.get(post.id) || { lat: 0, lng: 0 };
+    const lat = post.startLocation.lat + o.lat;
+    const lng = post.startLocation.lng + o.lng;
+
     const marker = new mapboxgl.Marker({
       element: markerElementForPost(post),
       anchor: "bottom"
     })
-      .setLngLat([post.startLocation.lng, post.startLocation.lat])
+      .setLngLat([lng, lat])
       .addTo(state.map);
 
     state.markers.push(marker);
@@ -1953,11 +2123,17 @@ async function initialize() {
   state.rsvpInbox = state.bootstrap.rsvpInbox || [];
   state.livingMap = state.bootstrap.livingMap || state.livingMap;
   state.privateSocialHealth = state.bootstrap.privateSocialHealth || null;
+  state.workspaceRecommendations = state.bootstrap.workspaceRecommendations || [];
+  state.groupRecommendations = state.bootstrap.groupRecommendations || [];
+  state.demoPersonas = state.bootstrap.demoPersonas || [];
 
   elements.workspaceTitle.textContent =
     state.bootstrap.brand?.promise || "Browse routines around you and post your own anchor.";
 
   renderPrivateSocialHealth();
+  renderWorkspaceRecommendations();
+  renderGroupRecommendations();
+  renderDemoPersonas();
   installComposer();
   installTrustRepeatPanel();
   renderRsvpInbox();

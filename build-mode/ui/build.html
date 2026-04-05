@@ -109,7 +109,7 @@
                 <summary class="optional-panel-summary">
                   <span class="eyebrow">Profile</span>
                   <strong>Hobbies &amp; meeting style</strong>
-                  <span class="optional-hint">Helps fit % on pins</span>
+                  <span class="optional-hint">Social Health (private), picks for you &amp; fit % update when you save</span>
                 </summary>
                 <div class="optional-panel-body">
                   <section
@@ -118,13 +118,45 @@
                     aria-labelledby="social-health-heading"
                   >
                     <div class="social-health-card-head">
-                      <span class="pill pill-private">Private to you</span>
-                      <h4 id="social-health-heading">Social health</h4>
+                      <span class="pill pill-private">Private · never shared</span>
+                      <h4 id="social-health-heading">Social Health Score</h4>
+                    </div>
+                    <div class="social-health-score-row" id="social-health-score-row" hidden>
+                      <div class="social-health-score-ring" aria-hidden="true">
+                        <span id="social-health-score-value" class="social-health-score-value">—</span>
+                      </div>
+                      <div class="social-health-score-meta">
+                        <p id="social-health-band" class="social-health-band"></p>
+                        <p class="social-health-score-caption">
+                          For your eyes only — not a leaderboard. Reflects rhythm from check-ins you log.
+                        </p>
+                      </div>
                     </div>
                     <p id="social-health-body" class="social-health-body"></p>
                     <p class="social-health-footnote">
-                      Based on ritual check-ins you log. Never shown on your pin or to neighbors.
+                      Wellbeing lens, not a dating score. Neighbors never see this number.
                     </p>
+                  </section>
+                  <section class="workspace-recs-card" id="workspace-recs-card" hidden>
+                    <p class="eyebrow workspace-recs-eyebrow">Picked for you</p>
+                    <p class="workspace-recs-hint">
+                      Like Spotify or YouTube — from your history and signals, not generic blasts.
+                    </p>
+                    <ul id="workspace-recs-list" class="workspace-recs-list" aria-label="Personalized picks"></ul>
+                  </section>
+                  <section class="workspace-recs-card group-recs-card" id="group-recs-card" hidden>
+                    <p class="eyebrow workspace-recs-eyebrow">Suggested groups</p>
+                    <p class="workspace-recs-hint">
+                      Trios where you and two neighbors share a signal — small pods, not generic blasts.
+                    </p>
+                    <ul id="group-recs-list" class="workspace-recs-list" aria-label="Suggested small groups"></ul>
+                  </section>
+                  <section class="demo-personas-card" id="demo-personas-card" hidden>
+                    <p class="eyebrow demo-personas-eyebrow">Demo personas</p>
+                    <p class="demo-personas-hint">
+                      Ten labeled identities for pitch — same neighborhood, different angles.
+                    </p>
+                    <ul id="demo-personas-list" class="demo-personas-list" aria-label="Demo personas"></ul>
                   </section>
                   <div id="hobby-chip-field" class="chip-field"></div>
                   <div id="quick-choice-fields" class="quick-choice-stack"></div>

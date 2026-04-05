@@ -3,6 +3,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildDemoViewerRoutineLogs } from "./socialHealthScore.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,7 +77,11 @@ function materializeSeed(seed, now = new Date()) {
     viewerId: seed.viewerId || null,
     userProfiles: cloneJson(seed.userProfiles || []),
     userRoutines: cloneJson(seed.userRoutines || []),
-    routineLogs: cloneJson(seed.routineLogs || []),
+    routineLogs: (() => {
+      const vid = seed.viewerId || "viewer";
+      const others = (seed.routineLogs || []).filter((l) => l.userId !== vid);
+      return [...others, ...buildDemoViewerRoutineLogs(now, vid)];
+    })(),
     activeIntentions: (seed.activeIntentions || []).map((item) => ({
       ...cloneJson(item),
       startTime: item.startTime || isoMinutesFrom(now, Number(item.startOffsetMinutes || 0)),
@@ -251,7 +256,14 @@ export class BuildModeDataStore {
       postRsvpRequests:
         Array.isArray(rt.postRsvpRequests) && rt.postRsvpRequests.length > 0
           ? rt.postRsvpRequests
-          : seed.postRsvpRequests
+          : seed.postRsvpRequests,
+      routineLogs: (() => {
+        const vid = seed.viewerId || "viewer";
+        const base =
+          Array.isArray(rt.routineLogs) && rt.routineLogs.length > 0 ? rt.routineLogs : seed.routineLogs;
+        const others = (base || []).filter((l) => l.userId !== vid);
+        return [...others, ...buildDemoViewerRoutineLogs(new Date(), vid)];
+      })()
     };
   }
 

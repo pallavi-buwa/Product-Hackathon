@@ -66,18 +66,20 @@
   "userProfiles": [
     {
       "id": "viewer",
-      "firstName": "You",
+      "firstName": "Riley",
       "homeCity": "Indianapolis",
       "socialEnergyLevel": "steady",
       "preferredGroupSize": 2,
-      "interests": ["walk", "coffee", "design"],
-      "hobbies": ["photography", "indie radio"],
+      "interests": ["walk", "coffee", "design", "libraries", "neighborhood"],
+      "hobbies": ["photography", "indie radio", "board games", "trail running"],
       "thirdPlaces": ["Highland Park Bridge", "Canal Walk"],
-      "eventsAttended": 2,
+      "eventsAttended": 4,
       "willingToAttendMore": 4,
       "onboardingHints": {},
-      "originNote": "Indy local — building Lodge with neighbors",
-      "funFact": "Has hosted 6 low-key bridge walks — zero slide decks involved.",
+      "originNote": "Product builder — demo persona with full Lodge history (switch hobbies to see different faces)",
+      "funFact": "Uses the weekly ritual check-in like a mood ring — private to them, never on the pin.",
+      "personaArchetype": "Builder / wellbeing host",
+      "personaPitch": "Ships Lodge while dogfooding Social Health — the private score investors can see on a real profile.",
       "recommendationPreferences": {
         "venueScores": {},
         "tagHits": {},
@@ -97,7 +99,9 @@
       "eventsAttended": 5,
       "willingToAttendMore": 5,
       "originNote": "Oaxaca → US · sunrise coffee on the canal",
-      "funFact": "Knows the canal barista rotation by heart."
+      "funFact": "Knows the canal barista rotation by heart.",
+      "personaArchetype": "Sunrise ritual regular",
+      "personaPitch": "Same window every week — the ‘because you did this before’ neighbor."
     },
     {
       "id": "noah",
@@ -125,7 +129,9 @@
       "eventsAttended": 3,
       "willingToAttendMore": 4,
       "originNote": "Chennai → Indy · tea and poetry walks",
-      "funFact": "Library card gets more steps than her watch some weeks."
+      "funFact": "Library card gets more steps than her watch some weeks.",
+      "personaArchetype": "Quiet reader · bridge walks",
+      "personaPitch": "Low-volume social energy, high-trust repeat rituals."
     },
     {
       "id": "elena",
@@ -139,7 +145,9 @@
       "eventsAttended": 4,
       "willingToAttendMore": 3,
       "originNote": "Madrid · Indy via Austin · market regular",
-      "funFact": "Once traded jam jars for sourdough tips at City Market."
+      "funFact": "Once traded jam jars for sourdough tips at City Market.",
+      "personaArchetype": "Market & fermentation",
+      "personaPitch": "Third place = City Market — group hangs start around food."
     },
     {
       "id": "marcus",
@@ -153,7 +161,9 @@
       "eventsAttended": 6,
       "willingToAttendMore": 4,
       "originNote": "Detroit · river miles & cold brew",
-      "funFact": "Tracks river mileage like fantasy football stats."
+      "funFact": "Tracks river mileage like fantasy football stats.",
+      "personaArchetype": "Trail + cold brew",
+      "personaPitch": "Athletic cadence without the gym-bro vibe — good for 3-person run pods."
     },
     {
       "id": "zoe",
@@ -181,7 +191,9 @@
       "eventsAttended": 4,
       "willingToAttendMore": 4,
       "originNote": "Nairobi → Midwest · latte art & dogs",
-      "funFact": "Remote stand-up is better with an actual latte walk after."
+      "funFact": "Remote stand-up is better with an actual latte walk after.",
+      "personaArchetype": "Remote + latte walks",
+      "personaPitch": "Board-game overlap with you — classic ‘similar taste’ signal."
     },
     {
       "id": "jules",
@@ -194,11 +206,13 @@
       "thirdPlaces": ["Mass Ave Studio", "Canal Walk"],
       "eventsAttended": 12,
       "willingToAttendMore": 5,
-      "originNote": "Montréal · film & golden-hour rides"
+      "originNote": "Montréal · film & golden-hour rides",
+      "personaArchetype": "Night creative · jazz",
+      "personaPitch": "High event appetite — surfaces when you slide ‘open to events’ up."
     },
     {
       "id": "riley",
-      "firstName": "Riley",
+      "firstName": "Reese",
       "homeCity": "Indianapolis",
       "socialEnergyLevel": "low",
       "preferredGroupSize": 2,
@@ -273,7 +287,9 @@
       "thirdPlaces": ["Canal Walk", "City Market"],
       "eventsAttended": 4,
       "willingToAttendMore": 4,
-      "originNote": "Casablanca → Midwest 6 yrs"
+      "originNote": "Casablanca → Midwest 6 yrs",
+      "personaArchetype": "Tea · gardens · slow food",
+      "personaPitch": "Community-garden energy — different from the gym / trail crowd."
     },
     {
       "id": "diego",
@@ -286,7 +302,9 @@
       "thirdPlaces": ["City Market", "Mass Ave Studio"],
       "eventsAttended": 7,
       "willingToAttendMore": 5,
-      "originNote": "Bogotá · hosts informal Spanish chat walks"
+      "originNote": "Bogotá · hosts informal Spanish chat walks",
+      "personaArchetype": "Street food · language mix",
+      "personaPitch": "High overlap with salsa + market scenes — great for lively group invites."
     },
     {
       "id": "amara",
@@ -325,7 +343,9 @@
       "thirdPlaces": ["Mass Ave Studio", "Canal Walk"],
       "eventsAttended": 10,
       "willingToAttendMore": 5,
-      "originNote": "Accra · Mass Ave studio nights"
+      "originNote": "Accra · Mass Ave studio nights",
+      "personaArchetype": "Studio · afrobeats connector",
+      "personaPitch": "Pulls groups toward Mass Ave — mentor energy without being loud."
     },
     {
       "id": "lin",

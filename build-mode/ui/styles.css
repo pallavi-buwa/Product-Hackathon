@@ -1705,6 +1705,181 @@ a {
   color: var(--muted);
 }
 
+.social-health-score-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 18px;
+  margin: 0 0 12px;
+}
+
+.social-health-score-ring {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, rgba(90, 150, 115, 0.35), rgba(255, 255, 255, 0.9));
+  border: 2px solid rgba(90, 150, 115, 0.45);
+  box-shadow: 0 8px 20px rgba(31, 61, 43, 0.12);
+}
+
+.social-health-score-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.social-health-score-meta {
+  flex: 1;
+  min-width: 140px;
+}
+
+.social-health-band {
+  margin: 0 0 4px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.social-health-score-caption {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.workspace-recs-card {
+  padding: 14px 16px;
+  border-radius: var(--radius-lg, 18px);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+  margin-bottom: 14px;
+}
+
+.workspace-recs-eyebrow {
+  margin: 0 0 4px;
+}
+
+.workspace-recs-hint {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.workspace-recs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.workspace-recs-item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 61, 43, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.workspace-recs-title {
+  margin: 0 0 4px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.workspace-recs-sub {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.workspace-recs-reason {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: var(--text);
+  font-style: italic;
+}
+
+.group-recs-card {
+  border-style: dashed;
+}
+
+.demo-personas-card {
+  padding: 14px 16px;
+  border-radius: var(--radius-lg, 18px);
+  border: 1px solid var(--line);
+  background: rgba(248, 252, 249, 0.85);
+  margin-bottom: 14px;
+}
+
+.demo-personas-eyebrow {
+  margin: 0 0 4px;
+}
+
+.demo-personas-hint {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.demo-personas-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.demo-persona-item {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 61, 43, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.demo-persona-name {
+  margin: 0 0 2px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.demo-persona-tagline {
+  margin: 0 0 6px;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.demo-persona-pitch {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.demo-persona-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.demo-persona-chip {
+  font-size: 0.68rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(31, 61, 43, 0.06);
+  color: var(--muted);
+}
+
 .optional-panel-body label,
 .optional-panel-body .range-label {
   display: grid;

@@ -24,7 +24,8 @@ import {
   createOpenAISilentBridgeMessageBuilder
 } from "./silentBridge.js";
 import { computeSocialHeatZones } from "./livingMapHeat.js";
-import { computeSocialHealthMetrics } from "./socialHealthScore.js";
+import { computeSocialHealthMetrics, computeSocialHealthScore } from "./socialHealthScore.js";
+import { buildGroupRecommendations, buildWorkspaceRecommendations } from "./workspaceRecommendations.js";
 import {
   buildTemplateSocialHealthNarrative,
   createOpenAISocialHealthNarrativeBuilder
@@ -400,9 +401,20 @@ export class DemoBuildModeApp {
       routineLogs: this.state.routineLogs,
       now: new Date()
     });
+    const socialHealthScore = computeSocialHealthScore(socialHealthMetrics);
     const socialHealthNarrative = await this.socialHealthNarrativeBuilder({
       metrics: socialHealthMetrics,
       viewerProfile: this.getProfile(this.state.viewerId)
+    });
+    const workspaceRecommendations = buildWorkspaceRecommendations({
+      viewer: this.getProfile(this.state.viewerId),
+      ritualBondsForViewer: this.getRitualBondsForViewer(),
+      userProfiles: this.state.userProfiles,
+      activeIntentions: this.state.activeIntentions
+    });
+    const groupRecommendations = buildGroupRecommendations({
+      viewer: this.getProfile(this.state.viewerId),
+      userProfiles: this.state.userProfiles
     });
 
     return {
@@ -426,6 +438,9 @@ export class DemoBuildModeApp {
       workspaceFunFacts: this.state.workspaceFunFacts || [],
       neighborContactsById: this.buildNeighborContactsMap(matches || []),
       viewerActivity: this.getViewerActivity(),
+      workspaceRecommendations,
+      groupRecommendations,
+      demoPersonas: this.getDemoPersonas(),
       rsvpInbox: this.getHostRsvpInbox(),
       livingMap: {
         heatZones: socialHeatZones,
@@ -442,7 +457,11 @@ export class DemoBuildModeApp {
       privateSocialHealth: {
         neverShared: true,
         generationMode: this.generationMode,
-        metrics: socialHealthMetrics,
+        metrics: {
+          ...socialHealthMetrics,
+          score: socialHealthScore.score,
+          band: socialHealthScore.band
+        },
         narrative: socialHealthNarrative
       }
     };
@@ -768,6 +787,35 @@ export class DemoBuildModeApp {
     });
   }
 
+  /** Ten labeled demo personas for pitch / investor walk-through (includes viewer). */
+  getDemoPersonas() {
+    const order = [
+      "viewer",
+      "maya",
+      "priya",
+      "elena",
+      "marcus",
+      "sam",
+      "jules",
+      "fatima",
+      "diego",
+      "kwame"
+    ];
+    const withTag = (this.state.userProfiles || []).filter((p) => p.personaArchetype);
+    withTag.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    const rows = withTag.slice(0, 10);
+    return rows.map((p) => ({
+      id: p.id,
+      firstName: p.firstName,
+      archetype: p.personaArchetype,
+      pitch: p.personaPitch || p.originNote || "",
+      interests: (p.interests || []).slice(0, 6),
+      hobbies: (p.hobbies || []).slice(0, 6),
+      socialEnergyLevel: p.socialEnergyLevel ?? null,
+      preferredGroupSize: p.preferredGroupSize ?? null
+    }));
+  }
+
   getHeatZones() {
     return computeHeatZones({
       mapPlaces: this.state.mapPlaces,
@@ -892,7 +940,30 @@ export class DemoBuildModeApp {
       });
     }
 
-    results.sort((a, b) => b.percent - a.percent);
+    const byNeighborId = Object.fromEntries(neighbors.map((n) => [n.id, n]));
+    const hobbyOverlap = (nid) => {
+      const n = byNeighborId[nid];
+      if (!n) {
+        return 0;
+      }
+      const v = new Set((viewer.hobbies || []).map((h) => String(h).toLowerCase()));
+      let c = 0;
+      for (const h of n.hobbies || []) {
+        if (v.has(String(h).toLowerCase())) {
+          c += 1;
+        }
+      }
+      return c;
+    };
+
+    results.sort((a, b) => {
+      const hb = hobbyOverlap(b.neighborId);
+      const ha = hobbyOverlap(a.neighborId);
+      if (hb !== ha) {
+        return hb - ha;
+      }
+      return b.percent - a.percent;
+    });
 
     const slimMatches = results.map((r) => ({
       neighborId: r.neighborId,
