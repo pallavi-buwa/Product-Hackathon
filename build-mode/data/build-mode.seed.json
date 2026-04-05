@@ -1,0 +1,294 @@
+{
+  "brand": {
+    "name": "Lodge",
+    "mode": "BUILD",
+    "promise": "Turn what you already do alone into a shared ritual.",
+    "heroTitle": "Turn familiar solo routines into something shared.",
+    "heroText": "Lodge helps you post the quiet things you already do: a walk before work, a coffee loop, a market stop. The system finds nearby routine neighbors, rewrites the invite so it feels easy, and nudges people at the right moment."
+  },
+  "viewport": {
+    "center": { "lat": 39.7684, "lng": -86.1581 },
+    "zoom": 1.2,
+    "spanLat": 0.055,
+    "spanLng": 0.07
+  },
+  "mapPlaces": [
+    { "label": "Highland Park Bridge", "lat": 39.7688, "lng": -86.1584 },
+    { "label": "Canal Walk", "lat": 39.7691, "lng": -86.1612 },
+    { "label": "White River Trail", "lat": 39.7742, "lng": -86.1714 },
+    { "label": "City Market", "lat": 39.7649, "lng": -86.1462 },
+    { "label": "Mass Ave Studio", "lat": 39.7814, "lng": -86.1498 }
+  ],
+  "routineTypeOptions": [
+    { "value": "morning_walk", "label": "Morning walk" },
+    { "value": "coffee_run", "label": "Coffee run" },
+    { "value": "market_run", "label": "Market stop" },
+    { "value": "river_run", "label": "River run" },
+    { "value": "gym_session", "label": "Gym session" }
+  ],
+  "composerDefaults": {
+    "label": "Soft-start morning walk",
+    "type": "morning_walk",
+    "desiredGroupSize": 2,
+    "durationMinutes": 40,
+    "localSpotName": "Neighborhood bridge",
+    "cadencePerWeek": 2,
+    "contextTags": ["walk", "coffee", "gentle"],
+    "startOffsetMinutes": 45
+  },
+  "viewerId": "viewer",
+  "userProfiles": [
+    {
+      "id": "viewer",
+      "firstName": "You",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 2,
+      "interests": ["walk", "coffee", "design"]
+    },
+    {
+      "id": "maya",
+      "firstName": "Maya",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 2,
+      "interests": ["coffee", "walk", "sunrise"]
+    },
+    {
+      "id": "noah",
+      "firstName": "Noah",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "high",
+      "preferredGroupSize": 3,
+      "maxSharedRitualsPerWeek": 6,
+      "interests": ["gym", "fitness", "smoothies"]
+    },
+    {
+      "id": "priya",
+      "firstName": "Priya",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 2,
+      "interests": ["walk", "books", "tea"]
+    },
+    {
+      "id": "elena",
+      "firstName": "Elena",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "low",
+      "preferredGroupSize": 2,
+      "interests": ["market", "cooking", "coffee"]
+    },
+    {
+      "id": "marcus",
+      "firstName": "Marcus",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 2,
+      "interests": ["run", "trail", "brunch"]
+    },
+    {
+      "id": "zoe",
+      "firstName": "Zoe",
+      "homeCity": "Indianapolis",
+      "socialEnergyLevel": "steady",
+      "preferredGroupSize": 3,
+      "interests": ["ceramics", "market", "walking"]
+    }
+  ],
+  "userRoutines": [
+    {
+      "id": "routine-maya",
+      "userId": "maya",
+      "type": "coffee_run",
+      "label": "Canal coffee loop",
+      "daysOfWeek": ["monday", "wednesday", "friday", "saturday"],
+      "timeWindow": { "start": "08:05", "end": "08:35" },
+      "locationCoords": { "lat": 39.7691, "lng": -86.1612 },
+      "anchorPoints": [{ "lat": 39.7686, "lng": -86.1588 }],
+      "routineTags": ["coffee", "walk", "canal"],
+      "cadencePerWeek": 3
+    },
+    {
+      "id": "routine-noah",
+      "userId": "noah",
+      "type": "gym_session",
+      "label": "Downtown lift block",
+      "daysOfWeek": ["tuesday", "wednesday", "thursday", "saturday"],
+      "timeWindow": { "start": "07:15", "end": "08:40" },
+      "locationCoords": { "lat": 39.7712, "lng": -86.1568 },
+      "routineTags": ["gym", "fitness"],
+      "cadencePerWeek": 5
+    },
+    {
+      "id": "routine-priya",
+      "userId": "priya",
+      "type": "morning_walk",
+      "label": "Bridge walk",
+      "daysOfWeek": ["wednesday", "saturday"],
+      "timeWindow": { "start": "07:45", "end": "08:30" },
+      "locationCoords": { "lat": 39.7688, "lng": -86.1584 },
+      "routineTags": ["walk", "outside"],
+      "cadencePerWeek": 2
+    },
+    {
+      "id": "routine-elena",
+      "userId": "elena",
+      "type": "market_run",
+      "label": "Midweek market stop",
+      "daysOfWeek": ["wednesday", "sunday"],
+      "timeWindow": { "start": "17:40", "end": "18:30" },
+      "locationCoords": { "lat": 39.7649, "lng": -86.1462 },
+      "routineTags": ["market", "groceries", "cooking"],
+      "cadencePerWeek": 2
+    },
+    {
+      "id": "routine-marcus",
+      "userId": "marcus",
+      "type": "river_run",
+      "label": "White River loop",
+      "daysOfWeek": ["tuesday", "thursday", "saturday"],
+      "timeWindow": { "start": "18:05", "end": "19:00" },
+      "locationCoords": { "lat": 39.7742, "lng": -86.1714 },
+      "routineTags": ["run", "trail"],
+      "cadencePerWeek": 3
+    },
+    {
+      "id": "routine-zoe",
+      "userId": "zoe",
+      "type": "ceramics_walk",
+      "label": "Ceramics + walk",
+      "daysOfWeek": ["thursday"],
+      "timeWindow": { "start": "18:10", "end": "19:10" },
+      "locationCoords": { "lat": 39.7814, "lng": -86.1498 },
+      "routineTags": ["ceramics", "walking", "coffee"],
+      "cadencePerWeek": 1
+    },
+    {
+      "id": "routine-viewer",
+      "userId": "viewer",
+      "type": "morning_walk",
+      "label": "Your soft-start walk",
+      "daysOfWeek": ["wednesday", "friday", "saturday"],
+      "timeWindow": { "start": "08:00", "end": "08:35" },
+      "locationCoords": { "lat": 39.7685, "lng": -86.1582 },
+      "routineTags": ["walk", "coffee"],
+      "cadencePerWeek": 2
+    }
+  ],
+  "routineLogs": [
+    { "userId": "viewer", "occurredAt": "2026-04-01T08:00:00-04:00" },
+    { "userId": "viewer", "occurredAt": "2026-04-03T08:05:00-04:00" },
+    { "userId": "maya", "occurredAt": "2026-03-03T08:12:00-05:00" },
+    { "userId": "maya", "occurredAt": "2026-03-05T08:15:00-05:00" },
+    { "userId": "maya", "occurredAt": "2026-03-10T08:18:00-04:00" },
+    { "userId": "noah", "occurredAt": "2026-04-01T07:25:00-04:00" },
+    { "userId": "noah", "occurredAt": "2026-04-02T07:22:00-04:00" },
+    { "userId": "noah", "occurredAt": "2026-04-03T07:28:00-04:00" },
+    { "userId": "priya", "occurredAt": "2026-03-26T07:52:00-04:00" },
+    { "userId": "priya", "occurredAt": "2026-04-02T07:50:00-04:00" },
+    { "userId": "elena", "occurredAt": "2026-03-30T17:45:00-04:00" },
+    { "userId": "elena", "occurredAt": "2026-04-02T17:48:00-04:00" },
+    { "userId": "marcus", "occurredAt": "2026-04-01T18:06:00-04:00" },
+    { "userId": "marcus", "occurredAt": "2026-04-03T18:09:00-04:00" }
+  ],
+  "activeIntentions": [
+    {
+      "id": "intent-priya-1",
+      "creatorId": "priya",
+      "type": "morning_walk",
+      "label": "Bridge walk before work",
+      "startOffsetMinutes": 35,
+      "createdOffsetMinutes": -30,
+      "startLocation": { "lat": 39.7688, "lng": -86.1584 },
+      "endLocation": { "lat": 39.7702, "lng": -86.1569 },
+      "localSpotName": "Highland Park Bridge",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 2,
+      "durationMinutes": 35,
+      "contextTags": ["walk", "gentle"],
+      "status": "open"
+    },
+    {
+      "id": "intent-elena-1",
+      "creatorId": "elena",
+      "type": "market_run",
+      "label": "Midweek market stop",
+      "startOffsetMinutes": 140,
+      "createdOffsetMinutes": -55,
+      "startLocation": { "lat": 39.7649, "lng": -86.1462 },
+      "endLocation": { "lat": 39.7634, "lng": -86.1446 },
+      "localSpotName": "City Market",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 1,
+      "durationMinutes": 45,
+      "contextTags": ["market", "cooking"],
+      "status": "open"
+    },
+    {
+      "id": "intent-marcus-1",
+      "creatorId": "marcus",
+      "type": "river_run",
+      "label": "White River loop",
+      "startOffsetMinutes": 170,
+      "createdOffsetMinutes": -70,
+      "startLocation": { "lat": 39.7742, "lng": -86.1714 },
+      "endLocation": { "lat": 39.7761, "lng": -86.1738 },
+      "localSpotName": "White River Trailhead",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 2,
+      "durationMinutes": 50,
+      "contextTags": ["run", "trail"],
+      "status": "open"
+    },
+    {
+      "id": "intent-maya-1",
+      "creatorId": "maya",
+      "type": "coffee_run",
+      "label": "Canal walk + coffee",
+      "startOffsetMinutes": 55,
+      "createdOffsetMinutes": -35,
+      "startLocation": { "lat": 39.7691, "lng": -86.1612 },
+      "endLocation": { "lat": 39.7682, "lng": -86.1591 },
+      "localSpotName": "Canal Walk",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 3,
+      "durationMinutes": 40,
+      "contextTags": ["coffee", "walk"],
+      "status": "open"
+    },
+    {
+      "id": "intent-zoe-1",
+      "creatorId": "zoe",
+      "type": "ceramics_walk",
+      "label": "Clay studio stroll",
+      "startOffsetMinutes": 220,
+      "createdOffsetMinutes": -85,
+      "startLocation": { "lat": 39.7814, "lng": -86.1498 },
+      "endLocation": { "lat": 39.7801, "lng": -86.1512 },
+      "localSpotName": "Mass Ave Studio",
+      "desiredGroupSize": 3,
+      "cadencePerWeek": 1,
+      "durationMinutes": 60,
+      "contextTags": ["ceramics", "walking"],
+      "status": "open"
+    }
+  ],
+  "updates": [
+    {
+      "kind": "anchor",
+      "message": "Bridge walk sync opened near Highland Park Bridge.",
+      "offsetMinutes": -12
+    },
+    {
+      "kind": "nudge",
+      "message": "A quiet nudge was sent for a Canal coffee loop.",
+      "offsetMinutes": -8
+    },
+    {
+      "kind": "ritual",
+      "message": "A new ritual blueprint was drafted for City Market.",
+      "offsetMinutes": -4
+    }
+  ]
+}

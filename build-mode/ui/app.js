@@ -5,21 +5,18 @@ const state = {
   selectedPostId: null,
   detailCache: new Map(),
   liveFeed: { stats: {}, updates: [] },
+  mapPlaces: [],
+  routineTypeOptions: [],
+  composerDefaults: {},
   markerScreenPositions: [],
   pendingViewportFetch: null,
   pointer: { x: 0, y: 0 },
   globeFlash: 0
 };
 
-const places = [
-  { label: "Highland Park Bridge", lat: 39.7688, lng: -86.1584 },
-  { label: "Canal Walk", lat: 39.7691, lng: -86.1612 },
-  { label: "White River Trail", lat: 39.7742, lng: -86.1714 },
-  { label: "City Market", lat: 39.7649, lng: -86.1462 },
-  { label: "Mass Ave Studio", lat: 39.7814, lng: -86.1498 }
-];
-
 const elements = {
+  heroTitle: document.querySelector("#hero-title"),
+  heroText: document.querySelector("#hero-text"),
   heroMetrics: document.querySelector("#hero-metrics"),
   liveUpdates: document.querySelector("#live-updates"),
   focusFeatured: document.querySelector("#focus-featured"),
@@ -29,6 +26,7 @@ const elements = {
   viewportLabel: document.querySelector("#viewport-label"),
   postCountLabel: document.querySelector("#post-count-label"),
   composerForm: document.querySelector("#composer-form"),
+  routineTypeSelect: document.querySelector("#routine-type-select"),
   mapCanvas: document.querySelector("#map-canvas"),
   globeCanvas: document.querySelector("#globe-canvas"),
   zoomIn: document.querySelector("#zoom-in"),
@@ -74,8 +72,8 @@ async function requestJson(url, options = {}) {
 
 function currentSpans() {
   return {
-    spanLat: 0.055 / state.viewport.zoom,
-    spanLng: 0.07 / state.viewport.zoom
+    spanLat: state.bootstrap.viewport.spanLat / state.viewport.zoom,
+    spanLng: state.bootstrap.viewport.spanLng / state.viewport.zoom
   };
 }
 
@@ -90,10 +88,14 @@ function currentBounds() {
 }
 
 function nearestPlaceLabel(center) {
-  let best = places[0];
+  if (!state.mapPlaces.length) {
+    return "Current area";
+  }
+
+  let best = state.mapPlaces[0];
   let bestDistance = Number.POSITIVE_INFINITY;
 
-  for (const place of places) {
+  for (const place of state.mapPlaces) {
     const distance = Math.hypot(center.lat - place.lat, center.lng - place.lng);
     if (distance < bestDistance) {
       best = place;
@@ -107,6 +109,13 @@ function nearestPlaceLabel(center) {
 function updateViewportLabels() {
   elements.viewportLabel.textContent = nearestPlaceLabel(state.viewport.center);
   elements.postCountLabel.textContent = `${state.posts.length} posts in view`;
+}
+
+function renderBrandCopy() {
+  const brand = state.bootstrap?.brand || {};
+  elements.heroTitle.textContent = brand.heroTitle || brand.promise || "Build shared rituals";
+  elements.heroText.textContent =
+    brand.heroText || "Lodge helps you turn ordinary routines into something shared.";
 }
 
 function renderHeroMetrics() {
@@ -126,10 +135,7 @@ function renderHeroMetrics() {
 function renderLiveUpdates() {
   elements.liveUpdates.innerHTML = state.liveFeed.updates
     .slice(0, 5)
-    .map(
-      (update) =>
-        `<li><strong>${update.kind}</strong><br />${update.message}</li>`
-    )
+    .map((update) => `<li><strong>${update.kind}</strong><br />${update.message}</li>`)
     .join("");
 }
 
@@ -143,9 +149,9 @@ function postCardMarkup(post) {
   return `
     <article class="post-card ${selected}" data-post-id="${post.id}">
       <div class="post-meta">
-        <p class="eyebrow">${post.creatorName} · ${post.startTimeLabel}</p>
+        <p class="eyebrow">${post.creatorName} - ${post.startTimeLabel}</p>
         <h5>${post.label}</h5>
-        <p>${post.localSpotName} · ${formatDistance(post.distanceMiles)}</p>
+        <p>${post.localSpotName} - ${formatDistance(post.distanceMiles)}</p>
         <div class="tag-row">${tags}</div>
       </div>
     </article>
@@ -185,17 +191,13 @@ function detailMarkup(detail) {
     )
     .join("");
   const notificationMarkup = plan.notifications
-    .map(
-      (notification) => `
-        <li>${notification.message}</li>
-      `
-    )
+    .map((notification) => `<li>${notification.message}</li>`)
     .join("");
 
   return `
     <div class="detail-stack">
       <div>
-        <p class="eyebrow">${creator.firstName} · ${formatDateLabel(post.startTime)}</p>
+        <p class="eyebrow">${creator.firstName} - ${formatDateLabel(post.startTime)}</p>
         <h5>${post.label}</h5>
         <p class="detail-copy">${plan.blueprint.summary}</p>
       </div>
@@ -295,9 +297,9 @@ function drawMap() {
   mapContext.save();
   mapContext.strokeStyle = "rgba(95, 134, 169, 0.18)";
   mapContext.lineWidth = 2;
-  for (let index = 0; index < places.length - 1; index += 1) {
-    const start = projectPoint(places[index], width, height);
-    const end = projectPoint(places[index + 1], width, height);
+  for (let index = 0; index < state.mapPlaces.length - 1; index += 1) {
+    const start = projectPoint(state.mapPlaces[index], width, height);
+    const end = projectPoint(state.mapPlaces[index + 1], width, height);
     mapContext.beginPath();
     mapContext.moveTo(start.x, start.y);
     mapContext.bezierCurveTo(
@@ -312,11 +314,17 @@ function drawMap() {
   }
   mapContext.restore();
 
-  for (const place of places) {
+  for (const place of state.mapPlaces) {
     const projected = projectPoint(place, width, height);
-    if (projected.x < -80 || projected.x > width + 80 || projected.y < -40 || projected.y > height + 40) {
+    if (
+      projected.x < -80 ||
+      projected.x > width + 80 ||
+      projected.y < -40 ||
+      projected.y > height + 40
+    ) {
       continue;
     }
+
     mapContext.fillStyle = "rgba(28, 57, 47, 0.6)";
     mapContext.font = '12px "Manrope"';
     mapContext.fillText(place.label, projected.x + 8, projected.y - 8);
@@ -325,7 +333,7 @@ function drawMap() {
   state.markerScreenPositions = state.posts.map((post, index) => {
     const projected = projectPoint(post.startLocation, width, height);
     const radius = post.creatorId === state.bootstrap.viewer.id ? 10 : 8;
-    const pulse = 6 + Math.sin((performance.now() / 700) + index) * 2;
+    const pulse = 6 + Math.sin(performance.now() / 700 + index) * 2;
 
     mapContext.save();
     mapContext.fillStyle =
@@ -393,13 +401,21 @@ function drawGlobe(time = 0) {
   globeContext.lineWidth = 1;
   for (let ring = 0; ring < 4; ring += 1) {
     globeContext.beginPath();
-    globeContext.ellipse(0, 0, radius + ring * 18, (radius + ring * 18) * 0.34, 0, 0, Math.PI * 2);
+    globeContext.ellipse(
+      0,
+      0,
+      radius + ring * 18,
+      (radius + ring * 18) * 0.34,
+      0,
+      0,
+      Math.PI * 2
+    );
     globeContext.stroke();
   }
 
   for (const point of globePoints) {
     const latRad = (point.lat * Math.PI) / 180;
-    const lngRad = ((point.lng * Math.PI) / 180) + rotation;
+    const lngRad = (point.lng * Math.PI) / 180 + rotation;
     const x = Math.cos(latRad) * Math.sin(lngRad);
     const y = Math.sin(latRad);
     const z = Math.cos(latRad) * Math.cos(lngRad);
@@ -435,12 +451,13 @@ function drawGlobe(time = 0) {
 
 async function loadPosts() {
   const bounds = currentBounds();
+  const { spanLat, spanLng } = currentSpans();
   const query = new URLSearchParams({
     centerLat: String(state.viewport.center.lat),
     centerLng: String(state.viewport.center.lng),
     zoom: String(state.viewport.zoom),
-    spanLat: String(currentSpans().spanLat),
-    spanLng: String(currentSpans().spanLng),
+    spanLat: String(spanLat),
+    spanLng: String(spanLng),
     ...Object.fromEntries(Object.entries(bounds).map(([key, value]) => [key, String(value)]))
   });
   const payload = await requestJson(`/api/posts?${query.toString()}`);
@@ -530,7 +547,10 @@ function installMapInteractions() {
     const dy = event.clientY - drag.lastY;
     drag.lastX = event.clientX;
     drag.lastY = event.clientY;
-    drag.moved = drag.moved || Math.abs(event.clientX - drag.startX) > 4 || Math.abs(event.clientY - drag.startY) > 4;
+    drag.moved =
+      drag.moved ||
+      Math.abs(event.clientX - drag.startX) > 4 ||
+      Math.abs(event.clientY - drag.startY) > 4;
 
     const { spanLat, spanLng } = currentSpans();
     state.viewport.center.lng -= (dx / elements.mapCanvas.clientWidth) * spanLng;
@@ -579,9 +599,31 @@ function installMapInteractions() {
 }
 
 function installComposer() {
-  const startTimeInput = elements.composerForm.elements.startTime;
-  const initialDate = new Date(Date.now() + 45 * 60 * 1000);
-  startTimeInput.value = toDateTimeLocalValue(initialDate);
+  const { composerDefaults, routineTypeOptions } = state;
+  elements.routineTypeSelect.innerHTML = routineTypeOptions
+    .map((option) => `<option value="${option.value}">${option.label}</option>`)
+    .join("");
+
+  elements.composerForm.elements.label.value = composerDefaults.label || "";
+  elements.routineTypeSelect.value = composerDefaults.type || routineTypeOptions[0]?.value || "";
+  elements.composerForm.elements.desiredGroupSize.value = String(
+    composerDefaults.desiredGroupSize ?? 2
+  );
+  elements.composerForm.elements.durationMinutes.value = String(
+    composerDefaults.durationMinutes ?? 40
+  );
+  elements.composerForm.elements.localSpotName.value = composerDefaults.localSpotName || "";
+  elements.composerForm.elements.cadencePerWeek.value = String(
+    composerDefaults.cadencePerWeek ?? 2
+  );
+  elements.composerForm.elements.contextTags.value = Array.isArray(composerDefaults.contextTags)
+    ? composerDefaults.contextTags.join(", ")
+    : "";
+
+  const initialDate = new Date(
+    Date.now() + Number(composerDefaults.startOffsetMinutes ?? 45) * 60 * 1000
+  );
+  elements.composerForm.elements.startTime.value = toDateTimeLocalValue(initialDate);
 
   elements.composerForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -614,7 +656,9 @@ function installComposer() {
 
     await loadPosts();
     renderDetail();
-    document.querySelector("#detail-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .querySelector("#detail-panel")
+      .scrollIntoView({ behavior: "smooth", block: "start" });
   });
 }
 
@@ -639,7 +683,9 @@ function installHeroActions() {
     state.viewport.center = { ...featured.startLocation };
     await loadPosts();
     await loadDetail(featured.id);
-    document.querySelector("#build-app").scrollIntoView({ behavior: "smooth", block: "start" });
+    document
+      .querySelector("#build-app")
+      .scrollIntoView({ behavior: "smooth", block: "start" });
   });
 }
 
@@ -658,7 +704,11 @@ async function initialize() {
     zoom: state.bootstrap.viewport.zoom
   };
   state.liveFeed = state.bootstrap.liveFeed;
+  state.mapPlaces = state.bootstrap.mapPlaces || [];
+  state.routineTypeOptions = state.bootstrap.routineTypeOptions || [];
+  state.composerDefaults = state.bootstrap.composerDefaults || {};
 
+  renderBrandCopy();
   renderHeroMetrics();
   renderLiveUpdates();
   updateViewportLabels();

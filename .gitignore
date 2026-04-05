@@ -11,3 +11,4 @@ Thumbs.db
 coverage/
 *.tmp
 *.temp
+build-mode/data/build-mode.runtime.json

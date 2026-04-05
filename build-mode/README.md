@@ -48,7 +48,11 @@ node .\build-mode\tests\routineMatchmaker.test.js
 - `src/server.js`
   Static file server plus JSON and SSE endpoints for the demo app.
 - `src/demoBuildApp.js`
-  In-memory BUILD app state, seeded posts, live updates, and plan generation.
+  BUILD app runtime, live updates, and plan generation.
+- `src/buildModeDataStore.js`
+  Loads configurable seed data and persists runtime posts to disk.
+- `data/build-mode.seed.json`
+  App seed/config for brand copy, map places, composer defaults, routines, and posts.
 - `ui/`
   Frontend landing page and BUILD workspace.
 - `src/buildModeService.js`

@@ -75,16 +75,17 @@ export function createServer({ port = 3030 } = {}) {
       const pathname = url.pathname;
 
       if (request.method === "GET" && pathname === "/api/bootstrap") {
-        return sendJson(response, 200, app.getBootstrap());
+        return sendJson(response, 200, await app.getBootstrap());
       }
 
       if (request.method === "GET" && pathname === "/api/posts") {
         return sendJson(response, 200, {
-          posts: app.listPosts(Object.fromEntries(url.searchParams.entries()))
+          posts: await app.listPosts(Object.fromEntries(url.searchParams.entries()))
         });
       }
 
       if (request.method === "GET" && pathname === "/api/live-feed") {
+        await app.ensureReady();
         return sendJson(response, 200, app.getLiveFeed());
       }
 
@@ -95,6 +96,7 @@ export function createServer({ port = 3030 } = {}) {
           "Cache-Control": "no-cache"
         });
 
+        await app.ensureReady();
         const unsubscribe = app.subscribe(response);
         request.on("close", unsubscribe);
         return;
