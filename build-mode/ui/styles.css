@@ -280,6 +280,20 @@ a {
   height: 44px;
 }
 
+.lodge-mascot-wrap--tiny .lodge-mascot-img {
+  width: 38px;
+  height: 38px;
+}
+
+.lodge-mascot-wrap--micro .lodge-mascot-img {
+  width: 32px;
+  height: 32px;
+}
+
+.lodge-mascot-wrap--still {
+  animation: none !important;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .lodge-mascot-wrap--hero {
     animation: lodge-mascot-wave 3.2s ease-in-out infinite;
@@ -287,6 +301,11 @@ a {
 
   .lodge-mascot-wrap--inline {
     animation: lodge-mascot-wave-soft 2.8s ease-in-out infinite;
+  }
+
+  .lodge-mascot-wrap--tiny {
+    animation: lodge-mascot-wave-soft 3.4s ease-in-out infinite;
+    animation-delay: 0.35s;
   }
 }
 
@@ -319,18 +338,50 @@ a {
   }
 }
 
-.map-posts-empty-with-mascot {
+.empty-with-mascot {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 12px 8px 18px;
+  gap: 8px;
+  padding: 8px 6px 12px;
   text-align: center;
 }
 
-.map-posts-empty-with-mascot .map-posts-empty {
+.empty-with-mascot--spacious {
+  gap: 10px;
+  padding: 12px 8px 18px;
+}
+
+.empty-with-mascot .empty-state,
+.empty-with-mascot .my-activity-empty {
   margin: 0;
   max-width: 36ch;
+}
+
+.empty-with-mascot .map-posts-empty {
+  max-width: 36ch;
+}
+
+.bonds-empty-with-mascot {
+  padding: 6px 4px 10px;
+  gap: 6px;
+}
+
+.globe-card-mascot {
+  flex-shrink: 0;
+  opacity: 0.88;
+  align-self: end;
+}
+
+.feature-card--with-mascot {
+  position: relative;
+}
+
+.feature-card-mascot {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  opacity: 0.82;
 }
 
 @media (max-width: 720px) {
@@ -2285,10 +2336,16 @@ a {
   justify-self: start;
 }
 
-.bonds-empty {
+.bonds-empty,
+.bonds-empty-text {
   font-size: 0.82rem;
   color: var(--muted);
   margin: 0 0 8px;
+}
+
+.bonds-empty-with-mascot .bonds-empty-text {
+  margin: 0;
+  max-width: 28ch;
 }
 
 .trust-divider {

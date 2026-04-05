@@ -362,7 +362,10 @@ function renderRsvpInbox() {
   }
   const list = state.rsvpInbox || [];
   if (!list.length) {
-    elements.rsvpInboxList.innerHTML = '<p class="empty-state rsvp-inbox-empty">Nothing pending — you’ll see join requests here when you host.</p>';
+    elements.rsvpInboxList.innerHTML = emptyWithMascot(
+      "Nothing pending — you’ll see join requests here when you host.",
+      { variant: "tiny", pClass: "empty-state rsvp-inbox-empty" }
+    );
     return;
   }
 
@@ -429,7 +432,10 @@ function renderNearbyEvents() {
     return;
   }
   if (!state.nearbyEvents.length) {
-    elements.nearbyEventsList.innerHTML = '<p class="empty-state">No curated events in this demo.</p>';
+    elements.nearbyEventsList.innerHTML = emptyWithMascot("No curated events in this demo.", {
+      variant: "tiny",
+      pClass: "empty-state"
+    });
     return;
   }
 
@@ -886,8 +892,10 @@ function renderMyActivity() {
   const posts = va.openPosts || [];
   const errands = va.errands || [];
   if (!posts.length && !errands.length) {
-    el.innerHTML =
-      '<p class="my-activity-empty">No open rituals yet — publish from the left. Logged errands appear here too.</p>';
+    el.innerHTML = emptyWithMascot(
+      "No open rituals yet — publish from the left. Logged errands appear here too.",
+      { variant: "tiny", pClass: "my-activity-empty" }
+    );
     return;
   }
   let html = "";
@@ -1405,16 +1413,32 @@ function postCardMarkup(post) {
   `;
 }
 
-const MASCOT_IMG_EMPTY = `<span class="lodge-mascot-wrap lodge-mascot-wrap--inline" aria-hidden="true">
-  <img class="lodge-mascot-img" src="/lodge-mascot.svg" width="48" height="48" alt="" decoding="async" />
+function mascotMarkup(variant = "inline") {
+  const map = {
+    inline: "lodge-mascot-wrap--inline",
+    tiny: "lodge-mascot-wrap--tiny",
+    micro: "lodge-mascot-wrap--micro"
+  };
+  const cls = map[variant] || map.inline;
+  const size = variant === "tiny" ? 38 : variant === "micro" ? 30 : 48;
+  return `<span class="lodge-mascot-wrap ${cls}" aria-hidden="true">
+  <img class="lodge-mascot-img" src="/lodge-mascot.svg" width="${size}" height="${size}" alt="" decoding="async" />
 </span>`;
+}
+
+function emptyWithMascot(messageHtml, { variant = "tiny", extraWrapClass = "", pClass = "empty-state" } = {}) {
+  return `<div class="empty-with-mascot ${extraWrapClass}" role="presentation">
+    ${mascotMarkup(variant)}
+    <p class="${pClass}">${messageHtml}</p>
+  </div>`;
+}
 
 function renderPostList() {
   if (!state.posts.length) {
-    elements.postList.innerHTML = `<div class="map-posts-empty-with-mascot" role="presentation">
-      ${MASCOT_IMG_EMPTY}
-      <p class="empty-state map-posts-empty">Pan the map or publish a ritual — open posts show here in a row.</p>
-    </div>`;
+    elements.postList.innerHTML = emptyWithMascot(
+      "Pan the map or publish a ritual — open posts show here in a row.",
+      { variant: "inline", extraWrapClass: "empty-with-mascot--spacious", pClass: "empty-state map-posts-empty" }
+    );
     return;
   }
 
