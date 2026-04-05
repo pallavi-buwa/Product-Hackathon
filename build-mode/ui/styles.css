@@ -763,6 +763,11 @@ a {
   margin-right: 6px;
 }
 
+.metric-chip-subtle {
+  opacity: 0.92;
+  background: rgba(255, 255, 255, 0.55);
+}
+
 .hero-visual {
   position: relative;
 }
@@ -1703,6 +1708,34 @@ a {
   box-shadow: 0 0 0 6px rgba(31, 61, 43, 0.18);
 }
 
+.marker-heat {
+  background: radial-gradient(circle, #ffb366 0%, rgba(255, 140, 80, 0.45) 100%);
+  box-shadow: 0 0 0 6px rgba(255, 160, 92, 0.22);
+}
+
+.moment-score {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.moment-score strong {
+  color: var(--accent);
+  font-size: 1.05rem;
+}
+
+.moment-breakdown {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.moment-breakdown li {
+  margin-bottom: 4px;
+}
+
 .post-card {
   border: 1px solid rgba(31, 61, 43, 0.08);
   background: rgba(255, 255, 255, 0.88);
@@ -1743,6 +1776,11 @@ a {
   margin: 0;
   color: var(--muted);
   line-height: 1.55;
+}
+
+.detail-copy-tight {
+  font-size: 0.88rem;
+  margin-bottom: 10px;
 }
 
 .tag-row {

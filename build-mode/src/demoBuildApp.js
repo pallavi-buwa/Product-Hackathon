@@ -4,11 +4,77 @@ import { BuildModeDataStore } from "./buildModeDataStore.js";
 import { analyzeRoutineEntropy } from "./entropy.js";
 import { haversineMiles } from "./geo.js";
 import { computeHeatZones } from "./heatMapCompute.js";
-import { createTemplateInvitationSynthesizer } from "./invitationSynthesizer.js";
-import { computePillarScores } from "./pillarScoring.js";
+import {
+  createOpenAIInvitationSynthesizer,
+  createTemplateInvitationSynthesizer
+} from "./invitationSynthesizer.js";
+import {
+  computePillarScores,
+  matchHighlightTemplate,
+  maybeMatchHighlightLine
+} from "./pillarScoring.js";
 import { lodgeConciergeReply } from "./lodgeConciergeChat.js";
 import { InMemoryBuildModeRepository } from "./repositories/inMemoryBuildModeRepository.js";
-import { createTemplateRitualBlueprintGenerator } from "./ritualBlueprint.js";
+import {
+  createOpenAIRitualBlueprintGenerator,
+  createTemplateRitualBlueprintGenerator
+} from "./ritualBlueprint.js";
+import {
+  buildSilentBridgeMessage,
+  createOpenAISilentBridgeMessageBuilder
+} from "./silentBridge.js";
+import { computeSocialHeatZones } from "./livingMapHeat.js";
+
+function createDemoAiStack() {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  const templateInvite = createTemplateInvitationSynthesizer();
+  const templateBlueprint = createTemplateRitualBlueprintGenerator();
+
+  if (!apiKey) {
+    return {
+      invitationSynthesizer: templateInvite,
+      blueprintGenerator: templateBlueprint,
+      silentBridgeMessageBuilder: buildSilentBridgeMessage,
+      generationMode: "template"
+    };
+  }
+
+  const openAiInvite = createOpenAIInvitationSynthesizer({ apiKey });
+  const openAiBlueprint = createOpenAIRitualBlueprintGenerator({ apiKey });
+  const openAiSilentBridge = createOpenAISilentBridgeMessageBuilder({ apiKey });
+
+  return {
+    invitationSynthesizer: {
+      async generateInvitation(args) {
+        try {
+          return await openAiInvite.generateInvitation(args);
+        } catch (err) {
+          console.warn("[lodge-build] invitation AI fallback:", err.message);
+          return templateInvite.generateInvitation(args);
+        }
+      }
+    },
+    blueprintGenerator: {
+      async generateBlueprint(args) {
+        try {
+          return await openAiBlueprint.generateBlueprint(args);
+        } catch (err) {
+          console.warn("[lodge-build] blueprint AI fallback:", err.message);
+          return templateBlueprint.generateBlueprint(args);
+        }
+      }
+    },
+    silentBridgeMessageBuilder: async (ctx) => {
+      try {
+        return await openAiSilentBridge(ctx);
+      } catch (err) {
+        console.warn("[lodge-build] silent bridge AI fallback:", err.message);
+        return buildSilentBridgeMessage(ctx);
+      }
+    },
+    generationMode: "openai"
+  };
+}
 
 function startTimeLabel(value) {
   return new Date(value).toLocaleTimeString("en-US", {
@@ -152,8 +218,11 @@ export class DemoBuildModeApp {
     this.state = null;
     this.ready = this.initialize();
     this.subscribers = new Set();
-    this.invitationSynthesizer = createTemplateInvitationSynthesizer();
-    this.blueprintGenerator = createTemplateRitualBlueprintGenerator();
+    const ai = createDemoAiStack();
+    this.invitationSynthesizer = ai.invitationSynthesizer;
+    this.blueprintGenerator = ai.blueprintGenerator;
+    this.silentBridgeMessageBuilder = ai.silentBridgeMessageBuilder;
+    this.generationMode = ai.generationMode;
     this.pulseTimer = setInterval(async () => {
       await this.ensureReady();
       if (!this.state.activeIntentions.length) {
@@ -270,6 +339,11 @@ export class DemoBuildModeApp {
 
     const { matches } = await this.getNeighborMatches();
 
+    const socialHeatZones = computeSocialHeatZones({
+      mapPlaces: this.state.mapPlaces,
+      userRoutines: this.state.userRoutines
+    });
+
     return {
       brand: this.state.brand,
       viewer: this.getProfile(this.state.viewerId),
@@ -290,7 +364,19 @@ export class DemoBuildModeApp {
       workspaceFunFacts: this.state.workspaceFunFacts || [],
       neighborContactsById: this.buildNeighborContactsMap(matches || []),
       viewerActivity: this.getViewerActivity(),
-      rsvpInbox: this.getHostRsvpInbox()
+      rsvpInbox: this.getHostRsvpInbox(),
+      livingMap: {
+        heatZones: socialHeatZones,
+        generationMode: this.generationMode,
+        copy: {
+          heatTitle: "Social heat zones",
+          heatBody:
+            "Warm glows show where three or more compatible neighbors cluster around a public anchor — vibe, not pins.",
+          opportunityTitle: "Opportunity %",
+          opportunityBody:
+            "Not a dating score. It is compatibility-of-moment: activity overlap, social velocity, shared anchors, and routine entropy."
+        }
+      }
     };
   }
 
@@ -900,6 +986,7 @@ export class DemoBuildModeApp {
       repository,
       invitationSynthesizer: this.invitationSynthesizer,
       blueprintGenerator: this.blueprintGenerator,
+      silentBridgeMessageBuilder: this.silentBridgeMessageBuilder,
       baseUrl: this.baseUrl
     });
 

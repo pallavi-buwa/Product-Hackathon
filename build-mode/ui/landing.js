@@ -3,6 +3,7 @@ const MAPBOX_TOKEN = window.__MAPBOX_TOKEN || "";
 const state = {
   bootstrap: null,
   liveFeed: { stats: {}, updates: [] },
+  livingMap: { generationMode: "template" },
   globeMap: null
 };
 
@@ -33,15 +34,22 @@ function renderBrandCopy() {
 
 function renderHeroMetrics() {
   const stats = state.liveFeed.stats || {};
-  elements.heroMetrics.innerHTML = [
+  const aiOn = state.livingMap?.generationMode === "openai";
+  const chips = [
     { label: "Open posts", value: stats.openPosts ?? 0 },
     { label: "Routine neighbors", value: stats.activeNeighbors ?? 0 },
-    { label: "Timely nudges", value: stats.liveNudges ?? 0 }
-  ]
-    .map(
-      (item) =>
-        `<div class="metric-chip"><strong>${item.value}</strong>${item.label}</div>`
-    )
+    { label: "Timely nudges", value: stats.liveNudges ?? 0 },
+    {
+      label: aiOn ? " OpenAI copy" : " Template copy",
+      value: aiOn ? "On" : "Off",
+      subtle: true
+    }
+  ];
+  elements.heroMetrics.innerHTML = chips
+    .map((item) => {
+      const cls = item.subtle ? "metric-chip metric-chip-subtle" : "metric-chip";
+      return `<div class="${cls}"><strong>${item.value}</strong>${item.label}</div>`;
+    })
     .join("");
 }
 
@@ -186,6 +194,7 @@ function installActions() {
 async function initialize() {
   state.bootstrap = await requestJson("/api/bootstrap");
   state.liveFeed = state.bootstrap.liveFeed;
+  state.livingMap = state.bootstrap.livingMap || state.livingMap;
   renderBrandCopy();
   renderHeroMetrics();
   installActions();

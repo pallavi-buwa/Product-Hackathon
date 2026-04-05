@@ -28,7 +28,8 @@ const state = {
   neighborContactsById: {},
   viewerActivity: { openPosts: [], errands: [] },
   _pinTooltipTimer: null,
-  _pinTooltipHideTimer: null
+  _pinTooltipHideTimer: null,
+  livingMap: { heatZones: [], generationMode: "template", copy: {} }
 };
 
 const elements = {
@@ -1715,6 +1716,7 @@ async function initialize() {
   state.neighborContactsById = state.bootstrap.neighborContactsById || {};
   state.viewerActivity = state.bootstrap.viewerActivity || { openPosts: [], errands: [] };
   state.rsvpInbox = state.bootstrap.rsvpInbox || [];
+  state.livingMap = state.bootstrap.livingMap || state.livingMap;
 
   elements.workspaceTitle.textContent =
     state.bootstrap.brand?.promise || "Browse routines around you and post your own anchor.";
