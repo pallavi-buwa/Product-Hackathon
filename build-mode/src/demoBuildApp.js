@@ -5,11 +5,8 @@ import { analyzeRoutineEntropy } from "./entropy.js";
 import { haversineMiles } from "./geo.js";
 import { computeHeatZones } from "./heatMapCompute.js";
 import { createTemplateInvitationSynthesizer } from "./invitationSynthesizer.js";
-import {
-  computePillarScores,
-  matchHighlightTemplate,
-  maybeMatchHighlightLine
-} from "./pillarScoring.js";
+import { computePillarScores } from "./pillarScoring.js";
+import { lodgeConciergeReply } from "./lodgeConciergeChat.js";
 import { InMemoryBuildModeRepository } from "./repositories/inMemoryBuildModeRepository.js";
 import { createTemplateRitualBlueprintGenerator } from "./ritualBlueprint.js";
 
@@ -92,14 +89,42 @@ function getDefaultViewport(state) {
   };
 }
 
-function toPostSummary({ post, profile, center }) {
+function stablePravatarImg(id) {
+  const s = String(id || "anon");
+  let h = 0;
+  for (let i = 0; i < s.length; i += 1) {
+    h = Math.imul(31, h) + s.charCodeAt(i) || 0;
+  }
+  return (Math.abs(h) % 70) + 1;
+}
+
+function displayAvatarForProfile(profile) {
+  if (profile?.avatarUrl) {
+    return profile.avatarUrl;
+  }
+  const id = profile?.id || profile?.firstName || "neighbor";
+  return `https://i.pravatar.cc/96?img=${stablePravatarImg(id)}`;
+}
+
+function bondWithNeighbor(ritualBonds, neighborId) {
+  return (ritualBonds || []).find((b) => b.neighborId === neighborId) || null;
+}
+
+function toPostSummary({ post, profile, center, ritualBonds }) {
   const distanceMiles = center ? haversineMiles(center, post.startLocation) : null;
+  const bond = bondWithNeighbor(ritualBonds, post.creatorId);
 
   return {
     id: post.id,
     creatorId: post.creatorId,
     creatorName: profile?.firstName || "Someone",
     creatorOriginNote: profile?.originNote || null,
+    creatorAvatarUrl: displayAvatarForProfile(profile),
+    creatorFunFact: profile?.funFact || null,
+    bondBlurb:
+      bond &&
+      `You've linked up ${bond.timesTogether}x — last "${bond.lastSharedLabel}" at ${bond.lastSpotName || "a favorite corner"}`,
+    repeatCadenceNote: post.repeatCadenceNote || null,
     type: post.type,
     label: post.label,
     localSpotName: post.localSpotName,
@@ -155,7 +180,12 @@ export class DemoBuildModeApp {
       viewerErrands: loadedState.viewerErrands || [],
       nearbyEvents: loadedState.nearbyEvents || [],
       errandPresets: loadedState.errandPresets || [],
-      eventInterests: loadedState.eventInterests || []
+      eventInterests: loadedState.eventInterests || [],
+      ritualBonds: loadedState.ritualBonds || [],
+      repeatTemplates: loadedState.repeatTemplates || [],
+      workspaceFunFacts: loadedState.workspaceFunFacts || [],
+      neighborErrandLogs: loadedState.neighborErrandLogs || [],
+      eventRsvpRequests: loadedState.eventRsvpRequests || []
     };
   }
 
@@ -238,6 +268,8 @@ export class DemoBuildModeApp {
       }
     };
 
+    const { matches } = await this.getNeighborMatches();
+
     return {
       brand: this.state.brand,
       viewer: this.getProfile(this.state.viewerId),
@@ -252,8 +284,242 @@ export class DemoBuildModeApp {
       errandPresets: this.state.errandPresets || [],
       hobbyOptions: this.state.hobbyOptions || [],
       quickChoices: this.state.quickChoices || [],
-      pillarGuide: this.state.pillarGuide || {}
+      pillarGuide: this.state.pillarGuide || {},
+      ritualBonds: this.getRitualBondsForViewer(),
+      repeatTemplates: this.state.repeatTemplates || [],
+      workspaceFunFacts: this.state.workspaceFunFacts || [],
+      neighborContactsById: this.buildNeighborContactsMap(matches || []),
+      viewerActivity: this.getViewerActivity(),
+      rsvpInbox: this.getHostRsvpInbox()
     };
+  }
+
+  getHostRsvpInbox() {
+    const vid = this.state.viewerId;
+    const now = Date.now();
+    return (this.state.eventRsvpRequests || [])
+      .filter((r) => {
+        if (r.status !== "pending") {
+          return false;
+        }
+        const ev = (this.state.nearbyEvents || []).find((e) => e.id === r.eventId);
+        if (!ev || ev.hostId !== vid) {
+          return false;
+        }
+        const visibleAfter = new Date(r.visibleToHostAfter || 0).getTime();
+        return now >= visibleAfter;
+      })
+      .map((r) => {
+        const ev = (this.state.nearbyEvents || []).find((e) => e.id === r.eventId);
+        const g = this.getProfile(r.guestId);
+        return {
+          id: r.id,
+          eventId: r.eventId,
+          eventTitle: ev?.title || "Event",
+          guestId: r.guestId,
+          guestName: g?.firstName || "Someone",
+          revealPolicy: r.revealPolicy
+        };
+      });
+  }
+
+  async requestEventRsvp(eventId, { revealPolicy = "always" } = {}) {
+    await this.ensureReady();
+    const event = (this.state.nearbyEvents || []).find((e) => e.id === eventId);
+    if (!event) {
+      return null;
+    }
+    const dup = (this.state.eventRsvpRequests || []).find(
+      (r) => r.eventId === eventId && r.guestId === this.state.viewerId && r.status === "pending"
+    );
+    if (dup) {
+      return { events: this.getPublicEvents(), inbox: this.getHostRsvpInbox(), duplicate: true };
+    }
+    const starts = new Date(event.startsAt).getTime();
+    const twoDays = 2 * 24 * 60 * 60 * 1000;
+    const policy = revealPolicy === "last2days" ? "last2days" : "always";
+    const createdAt = new Date().toISOString();
+    const visibleToHostAfter =
+      policy === "last2days" ? new Date(starts - twoDays).toISOString() : createdAt;
+    const req = {
+      id: randomUUID(),
+      eventId,
+      guestId: this.state.viewerId,
+      status: "pending",
+      revealPolicy: policy,
+      createdAt,
+      visibleToHostAfter
+    };
+    if (!this.state.eventRsvpRequests) {
+      this.state.eventRsvpRequests = [];
+    }
+    this.state.eventRsvpRequests.push(req);
+    await this.persistState();
+    return { events: this.getPublicEvents(), inbox: this.getHostRsvpInbox() };
+  }
+
+  async respondToRsvp(requestId, accept) {
+    await this.ensureReady();
+    const req = (this.state.eventRsvpRequests || []).find((r) => r.id === requestId);
+    if (!req || req.status !== "pending") {
+      return null;
+    }
+    const event = (this.state.nearbyEvents || []).find((e) => e.id === req.eventId);
+    if (!event || event.hostId !== this.state.viewerId) {
+      return null;
+    }
+    req.status = accept ? "accepted" : "rejected";
+    req.respondedAt = new Date().toISOString();
+    if (accept) {
+      if (!event.interestedUserIds) {
+        event.interestedUserIds = [];
+      }
+      if (!event.interestedUserIds.includes(req.guestId)) {
+        event.interestedUserIds.push(req.guestId);
+      }
+    }
+    await this.persistState();
+    return { events: this.getPublicEvents(), inbox: this.getHostRsvpInbox() };
+  }
+
+  async lodgeChat(messages) {
+    const key = process.env.OPENAI_API_KEY?.trim();
+    const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
+    const baseUrl = process.env.OPENAI_BASE_URL;
+    const last = messages?.length ? messages[messages.length - 1] : null;
+    if (!last || last.role !== "user") {
+      return { reply: null, error: "no_user_message" };
+    }
+    const history = messages.slice(0, -1);
+    const { text, error } = await lodgeConciergeReply({
+      userMessage: last.content,
+      history,
+      apiKey: key,
+      model,
+      baseUrl
+    });
+    return { reply: text, error: key ? error : "missing_key" };
+  }
+
+  buildNeighborContactsMap(matches) {
+    const byFit = Object.fromEntries((matches || []).map((m) => [m.neighborId, m.percent]));
+    const viewerId = this.state.viewerId;
+    const logs = this.state.neighborErrandLogs || [];
+    const out = {};
+
+    for (const p of this.state.userProfiles) {
+      const id = p.id;
+      const fit = byFit[id];
+      const open = this.state.activeIntentions.find((i) => i.creatorId === id && i.status === "open");
+      const routines = this.state.userRoutines.filter((r) => r.userId === id).slice(0, 4);
+      const errands =
+        id === viewerId
+          ? (this.state.viewerErrands || []).map((e) => ({
+              id: e.id,
+              label: e.label,
+              errandKey: e.errandKey,
+              loggedAt: e.windowStart || e.createdAt
+            }))
+          : logs.filter((l) => l.userId === id);
+
+      out[id] = {
+        userId: id,
+        firstName: p.firstName || "Someone",
+        avatarUrl: displayAvatarForProfile(p),
+        funFact: p.funFact || null,
+        fitPercent: id === viewerId ? null : (typeof fit === "number" ? fit : null),
+        fitLine:
+          id === viewerId
+            ? "You"
+            : typeof fit === "number"
+              ? `${fit}% fit with your profile`
+              : "Save profile signals to see fit scores.",
+        openRitual: open
+          ? {
+              label: open.label,
+              localSpotName: open.localSpotName,
+              startTimeLabel: startTimeLabel(open.startTime)
+            }
+          : null,
+        errands: errands.map((e) => ({
+          id: e.id,
+          label: e.label,
+          errandKey: e.errandKey,
+          loggedAt: e.loggedAt
+        })),
+        routineHints: routines.map((r) => r.label)
+      };
+    }
+
+    return out;
+  }
+
+  getViewerActivity() {
+    const vid = this.state.viewerId;
+    const openPosts = this.state.activeIntentions
+      .filter((p) => p.creatorId === vid && p.status === "open")
+      .map((p) => ({
+        id: p.id,
+        label: p.label,
+        localSpotName: p.localSpotName,
+        startTimeLabel: startTimeLabel(p.startTime)
+      }));
+    const errands = (this.state.viewerErrands || [])
+      .filter((e) => e.userId === vid)
+      .map((e) => ({
+        id: e.id,
+        label: e.label,
+        errandKey: e.errandKey,
+        windowStart: e.windowStart,
+        windowEnd: e.windowEnd,
+        openToTagAlong: Boolean(e.openToTagAlong)
+      }))
+      .sort((a, b) => new Date(b.windowStart).getTime() - new Date(a.windowStart).getTime());
+
+    return { openPosts, errands };
+  }
+
+  async toggleActivityFavorite(payload) {
+    await this.ensureReady();
+    const idx = this.state.userProfiles.findIndex((p) => p.id === this.state.viewerId);
+    if (idx < 0) {
+      return null;
+    }
+    const cur = this.state.userProfiles[idx];
+    const prev = Array.isArray(cur.activityFavorites) ? [...cur.activityFavorites] : [];
+    const entry = payload?.entry;
+    if (!entry || !entry.id) {
+      return null;
+    }
+    const exists = prev.findIndex((f) => f.id === entry.id);
+    let next;
+    if (exists >= 0) {
+      next = prev.filter((_, i) => i !== exists);
+    } else {
+      next = [...prev, { ...entry, savedAt: new Date().toISOString() }].slice(0, 24);
+    }
+    this.state.userProfiles[idx] = {
+      ...cur,
+      activityFavorites: next
+    };
+    await this.persistState();
+    return this.getProfile(this.state.viewerId);
+  }
+
+  getRitualBondsForViewer() {
+    return (this.state.ritualBonds || []).map((b) => {
+      const p = this.getProfile(b.neighborId);
+      return {
+        neighborId: b.neighborId,
+        firstName: p?.firstName || "Neighbor",
+        timesTogether: b.timesTogether,
+        lastSharedLabel: b.lastSharedLabel,
+        lastSpotName: b.lastSpotName || null,
+        lastSharedAt: b.lastSharedAt,
+        avatarUrl: displayAvatarForProfile(p),
+        funFact: p?.funFact || null
+      };
+    });
   }
 
   getHeatZones() {
@@ -261,7 +527,9 @@ export class DemoBuildModeApp {
       mapPlaces: this.state.mapPlaces,
       userRoutines: this.state.userRoutines,
       activeIntentions: this.state.activeIntentions,
-      viewerErrands: this.state.viewerErrands || []
+      viewerErrands: this.state.viewerErrands || [],
+      /** Demo-friendly: orange “glow” with 2+ distinct people (prod may use 3+). */
+      minNeighborsForGlow: 2
     });
   }
 
@@ -272,16 +540,29 @@ export class DemoBuildModeApp {
     raw.sort(
       (a, b) => eventPersonalizationScore(b, prefs) - eventPersonalizationScore(a, prefs)
     );
-    return raw.map((e) => ({
-      id: e.id,
-      title: e.title,
-      venueLabel: e.venueLabel,
-      lat: e.lat,
-      lng: e.lng,
-      startsAt: e.startsAt,
-      interestCount: (e.interestedUserIds || []).length,
-      youAreInterested: (e.interestedUserIds || []).includes(this.state.viewerId)
-    }));
+    const vid = this.state.viewerId;
+    const rsvps = this.state.eventRsvpRequests || [];
+    return raw.map((e) => {
+      const mine = rsvps.filter((r) => r.eventId === e.id && r.guestId === vid);
+      const latest = mine.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+      let yourRsvp = "none";
+      if (latest) {
+        yourRsvp = latest.status === "pending" ? "pending" : latest.status;
+      }
+      return {
+        id: e.id,
+        title: e.title,
+        venueLabel: e.venueLabel,
+        lat: e.lat,
+        lng: e.lng,
+        startsAt: e.startsAt,
+        hostId: e.hostId || null,
+        youAreHost: e.hostId === vid,
+        interestCount: (e.interestedUserIds || []).length,
+        youAreInterested: (e.interestedUserIds || []).includes(vid),
+        yourRsvp
+      };
+    });
   }
 
   sharedEventIds(viewerId, neighborId) {
@@ -367,10 +648,6 @@ export class DemoBuildModeApp {
 
     results.sort((a, b) => b.percent - a.percent);
 
-    const openaiKey = process.env.OPENAI_API_KEY?.trim();
-    const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
-    const baseUrl = process.env.OPENAI_BASE_URL;
-
     const slimMatches = results.map((r) => ({
       neighborId: r.neighborId,
       firstName: r.firstName,
@@ -385,37 +662,17 @@ export class DemoBuildModeApp {
       const openPost = this.state.activeIntentions.find(
         (p) => p.status === "open" && p.creatorId === top.neighborId
       );
-      const postSummary = openPost
-        ? {
-            id: openPost.id,
-            label: openPost.label,
-            localSpotName: openPost.localSpotName,
-            contextTags: openPost.contextTags || []
-          }
-        : null;
-
-      let line = matchHighlightTemplate(top, postSummary);
-      if (openaiKey) {
-        const aiLine = await maybeMatchHighlightLine(
-          viewer,
-          top,
-          postSummary,
-          openaiKey,
-          model,
-          baseUrl
-        );
-        if (aiLine) {
-          line = aiLine;
-        }
-      }
-
+      const neighborProfile = this.getProfile(top.neighborId);
+      const line = `${top.firstName} · ${top.percent}% fit with your profile`;
       highlight = {
         neighborId: top.neighborId,
         firstName: top.firstName,
         percent: top.percent,
-        postId: postSummary?.id ?? null,
+        postId: openPost?.id ?? null,
         overlappingErrand: top.overlappingErrand,
-        line
+        line,
+        fitLine: line,
+        avatarUrl: displayAvatarForProfile(neighborProfile)
       };
     }
 
@@ -505,7 +762,12 @@ export class DemoBuildModeApp {
     }
 
     await this.persistState();
-    return { errand, heatZones: this.getHeatZones(), errandSync };
+    return {
+      errand,
+      heatZones: this.getHeatZones(),
+      errandSync,
+      viewerActivity: this.getViewerActivity()
+    };
   }
 
   async submitRecommendationFeedback(payload) {
@@ -587,7 +849,8 @@ export class DemoBuildModeApp {
         toPostSummary({
           post,
           profile: this.getProfile(post.creatorId),
-          center: viewport.center
+          center: viewport.center,
+          ritualBonds: this.state.ritualBonds
         })
       )
       .sort((a, b) => (a.distanceMiles ?? 0) - (b.distanceMiles ?? 0));
@@ -604,7 +867,8 @@ export class DemoBuildModeApp {
     const summary = toPostSummary({
       post,
       profile,
-      center: getDefaultCenter(this.state)
+      center: getDefaultCenter(this.state),
+      ritualBonds: this.state.ritualBonds
     });
     const plan = await this.getPlan(postId);
 
@@ -713,9 +977,11 @@ export class DemoBuildModeApp {
       post: toPostSummary({
         post: activeIntention,
         profile: this.getProfile(activeIntention.creatorId),
-        center: defaultCenter
+        center: defaultCenter,
+        ritualBonds: this.state.ritualBonds
       }),
-      plan
+      plan,
+      viewerActivity: this.getViewerActivity()
     };
   }
 

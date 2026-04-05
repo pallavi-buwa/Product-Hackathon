@@ -1,4 +1,11 @@
 import { analyzeRoutineEntropy } from "./entropy.js";
+import {
+  buildMatchHighlightUserPrompt,
+  buildPillarInsightUserPrompt,
+  MATCH_HIGHLIGHT_SYSTEM,
+  PILLAR_INSIGHT_SYSTEM,
+  sanitizeLlmSentence
+} from "./openaiMatchPrompts.js";
 
 const WEIGHTS = {
   activityAlignment: 0.4,
@@ -128,11 +135,7 @@ export async function maybeRefineWithOpenAI(
   const root = String(baseUrl || "https://api.openai.com/v1").replace(/\/$/, "");
   const completionsUrl = `${root}/chat/completions`;
 
-  const prompt = `You are scoring neighbor compatibility for a social app (not dating). Given JSON pillars 0-100 and two user hobby lists, return ONE short sentence (max 25 words) insight. No PII.
-Viewer: ${JSON.stringify({ hobbies: viewer.hobbies, interests: viewer.interests })}
-Neighbor: ${JSON.stringify({ firstName: neighbor.firstName, hobbies: neighbor.hobbies, interests: neighbor.interests })}
-Pillars: ${JSON.stringify(base.breakdown)}
-Match %: ${base.percent}`;
+  const userContent = buildPillarInsightUserPrompt(viewer, neighbor, base);
 
   try {
     const res = await fetch(completionsUrl, {
@@ -144,16 +147,17 @@ Match %: ${base.percent}`;
       body: JSON.stringify({
         model,
         messages: [
-          { role: "system", content: "Reply with only the one sentence insight." },
-          { role: "user", content: prompt }
+          { role: "system", content: PILLAR_INSIGHT_SYSTEM },
+          { role: "user", content: `${userContent}\n\nReply with only the one sentence.` }
         ],
         max_tokens: 80,
-        temperature: 0.4
+        temperature: 0.35
       })
     });
     if (!res.ok) return { ...base, aiNote: null };
     const data = await res.json();
-    const text = data.choices?.[0]?.message?.content?.trim() || null;
+    const raw = data.choices?.[0]?.message?.content?.trim() || null;
+    const text = sanitizeLlmSentence(raw, { maxWords: 28, maxChars: 200 });
     return { ...base, aiNote: text };
   } catch {
     return { ...base, aiNote: null };
@@ -201,8 +205,7 @@ export async function maybeMatchHighlightLine(
       : null
   };
 
-  const prompt = `Write ONE friendly sentence (max 26 words) for a neighborhood app. Tell the user why to join this person's open ritual on the map now. If overlappingErrand is true, mention errands lining up. No emojis. JSON context only — do not invent names beyond neighborFirstName.
-Context: ${JSON.stringify(payloadCtx)}`;
+  const userContent = buildMatchHighlightUserPrompt(payloadCtx);
 
   try {
     const res = await fetch(`${root}/chat/completions`, {
@@ -214,19 +217,19 @@ Context: ${JSON.stringify(payloadCtx)}`;
       body: JSON.stringify({
         model,
         messages: [
-          { role: "system", content: "Reply with only the one sentence. No quotes around it." },
-          { role: "user", content: prompt }
+          { role: "system", content: MATCH_HIGHLIGHT_SYSTEM },
+          { role: "user", content: userContent }
         ],
-        max_tokens: 90,
-        temperature: 0.45
+        max_tokens: 100,
+        temperature: 0.4
       })
     });
     if (!res.ok) {
       return null;
     }
     const data = await res.json();
-    const text = data.choices?.[0]?.message?.content?.trim() || null;
-    return text || null;
+    const raw = data.choices?.[0]?.message?.content?.trim() || null;
+    return sanitizeLlmSentence(raw, { maxWords: 30, maxChars: 220 });
   } catch {
     return null;
   }

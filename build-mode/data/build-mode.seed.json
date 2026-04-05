@@ -51,11 +51,13 @@
       "willingToAttendMore": 4,
       "onboardingHints": {},
       "originNote": "Indy local — building Lodge with neighbors",
+      "funFact": "Has hosted 6 low-key bridge walks — zero slide decks involved.",
       "recommendationPreferences": {
         "venueScores": {},
         "tagHits": {},
         "netScore": 0
-      }
+      },
+      "activityFavorites": []
     },
     {
       "id": "maya",
@@ -68,7 +70,8 @@
       "thirdPlaces": ["Canal Walk", "City Market"],
       "eventsAttended": 5,
       "willingToAttendMore": 5,
-      "originNote": "Oaxaca → US · sunrise coffee on the canal"
+      "originNote": "Oaxaca → US · sunrise coffee on the canal",
+      "funFact": "Knows the canal barista rotation by heart."
     },
     {
       "id": "noah",
@@ -95,7 +98,8 @@
       "thirdPlaces": ["Highland Park Bridge", "City Market"],
       "eventsAttended": 3,
       "willingToAttendMore": 4,
-      "originNote": "Chennai → Indy · tea and poetry walks"
+      "originNote": "Chennai → Indy · tea and poetry walks",
+      "funFact": "Library card gets more steps than her watch some weeks."
     },
     {
       "id": "elena",
@@ -108,7 +112,8 @@
       "thirdPlaces": ["City Market", "Canal Walk"],
       "eventsAttended": 4,
       "willingToAttendMore": 3,
-      "originNote": "Madrid · Indy via Austin · market regular"
+      "originNote": "Madrid · Indy via Austin · market regular",
+      "funFact": "Once traded jam jars for sourdough tips at City Market."
     },
     {
       "id": "marcus",
@@ -121,7 +126,8 @@
       "thirdPlaces": ["White River Trail", "Mass Ave Studio"],
       "eventsAttended": 6,
       "willingToAttendMore": 4,
-      "originNote": "Detroit · river miles & cold brew"
+      "originNote": "Detroit · river miles & cold brew",
+      "funFact": "Tracks river mileage like fantasy football stats."
     },
     {
       "id": "zoe",
@@ -134,7 +140,8 @@
       "thirdPlaces": ["Mass Ave Studio", "City Market"],
       "eventsAttended": 7,
       "willingToAttendMore": 5,
-      "originNote": "Seoul + Indy since grad school · clay studio"
+      "originNote": "Seoul + Indy since grad school · clay studio",
+      "funFact": "Studio kiln nights > crowded bars, every time."
     },
     {
       "id": "sam",
@@ -147,7 +154,8 @@
       "thirdPlaces": ["Canal Walk", "Highland Park Bridge"],
       "eventsAttended": 4,
       "willingToAttendMore": 4,
-      "originNote": "Nairobi → Midwest · latte art & dogs"
+      "originNote": "Nairobi → Midwest · latte art & dogs",
+      "funFact": "Remote stand-up is better with an actual latte walk after."
     },
     {
       "id": "jules",
@@ -186,7 +194,8 @@
       "thirdPlaces": ["Highland Park Bridge", "Canal Walk"],
       "eventsAttended": 2,
       "willingToAttendMore": 3,
-      "originNote": "Manila → Indy · park loops with kiddo"
+      "originNote": "Manila → Indy · park loops with kiddo",
+      "funFact": "Stroller counts as gym; toddler agrees sometimes."
     },
     {
       "id": "omar",
@@ -329,7 +338,8 @@
       "thirdPlaces": ["Mass Ave Studio", "City Market"],
       "eventsAttended": 2,
       "willingToAttendMore": 3,
-      "originNote": "Taipei · soft studio strolls"
+      "originNote": "Taipei · soft studio strolls",
+      "funFact": "Sketchbook doubles as a conversation starter on slow walks."
     },
     {
       "id": "sofia",
@@ -639,6 +649,128 @@
     { "userId": "mei", "occurredAt": "2026-04-02T17:05:00-04:00" },
     { "userId": "sofia", "occurredAt": "2026-04-06T15:12:00-04:00" }
   ],
+  "viewerErrands": [
+    {
+      "id": "seed-viewer-coffee-canal",
+      "userId": "viewer",
+      "label": "Canal coffee tag-along",
+      "errandKey": "coffee",
+      "lat": 39.7691,
+      "lng": -86.1612,
+      "openToTagAlong": true,
+      "windowStartOffsetMinutes": -25,
+      "windowEndOffsetMinutes": 45
+    },
+    {
+      "id": "seed-viewer-market",
+      "userId": "viewer",
+      "label": "City Market groceries",
+      "errandKey": "grocery",
+      "lat": 39.7649,
+      "lng": -86.1462,
+      "openToTagAlong": true,
+      "windowStartOffsetMinutes": -15,
+      "windowEndOffsetMinutes": 50
+    }
+  ],
+  "neighborErrandLogs": [
+    { "id": "nel-maya-1", "userId": "maya", "label": "Oat milk & pastry run", "errandKey": "grocery", "offsetHours": 6 },
+    { "id": "nel-maya-2", "userId": "maya", "label": "Canal espresso refill", "errandKey": "coffee", "offsetHours": 18 },
+    { "id": "nel-maya-3", "userId": "maya", "label": "Sunrise dog loop", "errandKey": "dog_walk", "offsetHours": 30 },
+    { "id": "nel-priya-1", "userId": "priya", "label": "Library hold pickup", "errandKey": "transit", "offsetHours": 8 },
+    { "id": "nel-priya-2", "userId": "priya", "label": "Bridge tea thermos", "errandKey": "coffee", "offsetHours": 22 },
+    { "id": "nel-sam-1", "userId": "sam", "label": "Laptop cafe block", "errandKey": "coffee", "offsetHours": 4 },
+    { "id": "nel-sam-2", "userId": "sam", "label": "Coworking snack run", "errandKey": "grocery", "offsetHours": 20 },
+    { "id": "nel-elena-1", "userId": "elena", "label": "Ferment jars refill", "errandKey": "grocery", "offsetHours": 12 },
+    { "id": "nel-elena-2", "userId": "elena", "label": "Market tasting hop", "errandKey": "grocery", "offsetHours": 26 },
+    { "id": "nel-casey-1", "userId": "casey", "label": "Park sandbox + cold brew", "errandKey": "coffee", "offsetHours": 10 },
+    { "id": "nel-casey-2", "userId": "casey", "label": "Diaper dash drugstore", "errandKey": "transit", "offsetHours": 28 },
+    { "id": "nel-marcus-1", "userId": "marcus", "label": "River trail parking meter", "errandKey": "transit", "offsetHours": 14 },
+    { "id": "nel-jules-1", "userId": "jules", "label": "Bike tube patch stop", "errandKey": "transit", "offsetHours": 16 },
+    { "id": "nel-taylor-1", "userId": "taylor", "label": "Remote lunch stretch walk", "errandKey": "dog_walk", "offsetHours": 7 },
+    { "id": "nel-mei-1", "userId": "mei", "label": "Sketchbook paper restock", "errandKey": "transit", "offsetHours": 19 }
+  ],
+  "ritualBonds": [
+    {
+      "neighborId": "maya",
+      "timesTogether": 5,
+      "lastSharedLabel": "Canal coffee loop",
+      "lastSpotName": "Canal Walk",
+      "lastSharedAtOffsetDays": 4
+    },
+    {
+      "neighborId": "priya",
+      "timesTogether": 3,
+      "lastSharedLabel": "Bridge walk before work",
+      "lastSpotName": "Highland Park Bridge",
+      "lastSharedAtOffsetDays": 9
+    },
+    {
+      "neighborId": "casey",
+      "timesTogether": 2,
+      "lastSharedLabel": "Stroller loop + cold brew",
+      "lastSpotName": "Highland Park Bridge",
+      "lastSharedAtOffsetDays": 11
+    },
+    {
+      "neighborId": "elena",
+      "timesTogether": 4,
+      "lastSharedLabel": "Midweek market stop",
+      "lastSpotName": "City Market",
+      "lastSharedAtOffsetDays": 6
+    },
+    {
+      "neighborId": "sam",
+      "timesTogether": 3,
+      "lastSharedLabel": "Deep work cafe slot",
+      "lastSpotName": "Canal Walk",
+      "lastSharedAtOffsetDays": 2
+    }
+  ],
+  "repeatTemplates": [
+    {
+      "id": "rep-canal-coffee",
+      "label": "Canal walk + coffee (your usual)",
+      "type": "coffee_run",
+      "localSpotName": "Canal Walk",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 3,
+      "durationMinutes": 40,
+      "contextTags": ["coffee", "walk", "gentle"],
+      "buddyLine": "Maya & Sam often open this slot — easy to sync again.",
+      "errandPresetId": "coffee"
+    },
+    {
+      "id": "rep-bridge-walk",
+      "label": "Soft-start bridge walk",
+      "type": "morning_walk",
+      "localSpotName": "Highland Park Bridge",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 2,
+      "durationMinutes": 35,
+      "contextTags": ["walk", "gentle"],
+      "buddyLine": "You and Priya have done this route before.",
+      "errandPresetId": null
+    },
+    {
+      "id": "rep-market-run",
+      "label": "City Market midweek run",
+      "type": "market_run",
+      "localSpotName": "City Market",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 2,
+      "durationMinutes": 45,
+      "contextTags": ["market", "cooking"],
+      "buddyLine": "Elena’s usual tasting loop — join the rhythm.",
+      "errandPresetId": "grocery"
+    }
+  ],
+  "workspaceFunFacts": [
+    "Neighbors who repeat the same public anchor show up more often than one-off invites.",
+    "Short “while I’m already here” rituals get 2× the replies of long group threads.",
+    "Tag-along errands are the #1 path to a first in-person wave in our pilot.",
+    "People who’ve met once before accept the second invite 40% faster (demo data)."
+  ],
   "activeIntentions": [
     {
       "id": "intent-priya-1",
@@ -654,6 +786,7 @@
       "cadencePerWeek": 2,
       "durationMinutes": 35,
       "contextTags": ["walk", "gentle"],
+      "repeatCadenceNote": "Same window you’ve joined with Priya before — familiar faces welcome.",
       "status": "open"
     },
     {
@@ -670,6 +803,7 @@
       "cadencePerWeek": 1,
       "durationMinutes": 45,
       "contextTags": ["market", "cooking"],
+      "repeatCadenceNote": "Weekly regulars — grab the usual tasting loop.",
       "status": "open"
     },
     {
@@ -702,6 +836,7 @@
       "cadencePerWeek": 3,
       "durationMinutes": 40,
       "contextTags": ["coffee", "walk"],
+      "repeatCadenceNote": "Canal crew posts this slot a lot — low pressure to jump in.",
       "status": "open"
     },
     {
@@ -766,6 +901,7 @@
       "cadencePerWeek": 3,
       "durationMinutes": 40,
       "contextTags": ["walk", "coffee", "park"],
+      "repeatCadenceNote": "Park-loop parents often overlap here — kid chaos optional.",
       "status": "open"
     },
     {
@@ -863,6 +999,22 @@
       "durationMinutes": 40,
       "contextTags": ["market", "games", "snacks"],
       "status": "open"
+    },
+    {
+      "id": "intent-mei-1",
+      "creatorId": "mei",
+      "type": "ceramics_walk",
+      "label": "Quiet sketch hour at the studio",
+      "startOffsetMinutes": 200,
+      "createdOffsetMinutes": -72,
+      "startLocation": { "lat": 39.7814, "lng": -86.1498 },
+      "endLocation": { "lat": 39.7805, "lng": -86.1508 },
+      "localSpotName": "Mass Ave Studio",
+      "desiredGroupSize": 2,
+      "cadencePerWeek": 1,
+      "durationMinutes": 50,
+      "contextTags": ["art", "quiet", "walk"],
+      "status": "open"
     }
   ],
   "updates": [
@@ -898,7 +1050,8 @@
       "lat": 39.7691,
       "lng": -86.1612,
       "startsOffsetMinutes": 180,
-      "interestedUserIds": ["maya", "jules", "zoe", "diego", "kwame"]
+      "hostId": "maya",
+      "interestedUserIds": ["viewer", "maya", "jules", "zoe", "diego", "kwame"]
     },
     {
       "id": "evt-market",
@@ -907,7 +1060,8 @@
       "lat": 39.7649,
       "lng": -86.1462,
       "startsOffsetMinutes": 240,
-      "interestedUserIds": ["elena", "priya", "sam", "lin", "amara"]
+      "hostId": "viewer",
+      "interestedUserIds": ["viewer", "elena", "priya", "sam", "lin", "amara"]
     },
     {
       "id": "evt-trail",
@@ -916,6 +1070,7 @@
       "lat": 39.7742,
       "lng": -86.1714,
       "startsOffsetMinutes": 300,
+      "hostId": "jules",
       "interestedUserIds": ["marcus", "noah", "jules"]
     },
     {
@@ -925,7 +1080,26 @@
       "lat": 39.7814,
       "lng": -86.1498,
       "startsOffsetMinutes": 360,
+      "hostId": "viewer",
       "interestedUserIds": ["zoe", "marcus"]
+    }
+  ],
+  "eventRsvpRequests": [
+    {
+      "id": "rsvp-seed-studio-zoe",
+      "eventId": "evt-studio",
+      "guestId": "zoe",
+      "status": "pending",
+      "revealPolicy": "always",
+      "createdOffsetMinutes": -200
+    },
+    {
+      "id": "rsvp-seed-market-diego",
+      "eventId": "evt-market",
+      "guestId": "diego",
+      "status": "pending",
+      "revealPolicy": "last2days",
+      "createdOffsetMinutes": -90
     }
   ],
   "hobbyOptions": [

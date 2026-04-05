@@ -10,17 +10,25 @@ const state = {
   composerDefaults: {},
   heatZones: [],
   nearbyEvents: [],
+  ritualBonds: [],
+  repeatTemplates: [],
+  workspaceFunFacts: [],
   errandPresets: [],
   hobbyOptions: [],
   quickChoices: [],
   neighborMatches: [],
   matchHighlight: null,
+  rsvpInbox: [],
   syncToastDedupe: { message: "", until: 0 },
   selectedHobbies: new Set(),
   selectedErrandPresetId: null,
   map: null,
   markers: [],
-  pendingViewportFetch: null
+  pendingViewportFetch: null,
+  neighborContactsById: {},
+  viewerActivity: { openPosts: [], errands: [] },
+  _pinTooltipTimer: null,
+  _pinTooltipHideTimer: null
 };
 
 const elements = {
@@ -54,7 +62,21 @@ const elements = {
   spotlightDismiss: document.querySelector("#spotlight-dismiss"),
   spotlightOpenPin: document.querySelector("#spotlight-open-pin"),
   spotlightHelpful: document.querySelector("#spotlight-helpful"),
-  spotlightNotHelpful: document.querySelector("#spotlight-not-helpful")
+  spotlightNotHelpful: document.querySelector("#spotlight-not-helpful"),
+  spotlightAvatar: document.querySelector("#spotlight-avatar"),
+  mapPinTooltip: document.querySelector("#map-pin-tooltip"),
+  funFactRotator: document.querySelector("#fun-fact-rotator"),
+  bondsRow: document.querySelector("#bonds-row"),
+  bondsEmpty: document.querySelector("#bonds-empty"),
+  repeatTemplateChips: document.querySelector("#repeat-template-chips"),
+  myActivityBody: document.querySelector("#my-activity-body"),
+  myFavoritesBlock: document.querySelector("#my-favorites-block"),
+  myFavoritesList: document.querySelector("#my-favorites-list"),
+  rsvpInboxList: document.querySelector("#rsvp-inbox-list"),
+  conciergeThread: document.querySelector("#concierge-thread"),
+  conciergeInput: document.querySelector("#concierge-input"),
+  conciergeSend: document.querySelector("#concierge-send"),
+  conciergeStatus: document.querySelector("#concierge-status")
 };
 
 async function requestJson(url, options = {}) {
@@ -147,19 +169,18 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+function escapeAttr(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;");
+}
+
 function updateHeatLayer() {
   if (!state.map || !state.map.getSource("heat-zones")) {
     return;
   }
   state.map.getSource("heat-zones").setData(heatZonesToGeoJSON(state.heatZones));
-}
-
-function matchPercentForCreator(creatorId) {
-  if (!creatorId || creatorId === state.bootstrap?.viewer?.id) {
-    return null;
-  }
-  const row = state.neighborMatches.find((m) => m.neighborId === creatorId);
-  return typeof row?.percent === "number" ? row.percent : null;
 }
 
 function spotlightStorageKey(sig) {
@@ -173,15 +194,25 @@ function hideSpotlight() {
 }
 
 function showSpotlight(highlight) {
-  if (!elements.matchSpotlight || !highlight?.line) {
+  if (!elements.matchSpotlight || highlight == null || typeof highlight.percent !== "number") {
     return;
   }
   state._spotlightTargetPostId = highlight.postId || null;
   if (elements.spotlightTitle) {
-    elements.spotlightTitle.textContent = `${highlight.firstName || "Neighbor"} · ${highlight.percent}% fit`;
+    elements.spotlightTitle.textContent = highlight.firstName || "Neighbor";
   }
   if (elements.spotlightBody) {
-    elements.spotlightBody.textContent = highlight.line;
+    elements.spotlightBody.textContent = `${highlight.percent}% fit with your profile`;
+  }
+  if (elements.spotlightAvatar) {
+    if (highlight.avatarUrl) {
+      elements.spotlightAvatar.src = highlight.avatarUrl;
+      elements.spotlightAvatar.alt = `${highlight.firstName || "Neighbor"} portrait`;
+      elements.spotlightAvatar.hidden = false;
+    } else {
+      elements.spotlightAvatar.hidden = true;
+      elements.spotlightAvatar.removeAttribute("src");
+    }
   }
   const hasPin = Boolean(highlight.postId);
   if (elements.spotlightOpenPin) {
@@ -272,6 +303,90 @@ function formatEventStarts(iso) {
   });
 }
 
+function mergeRsvpApiPayload(data) {
+  if (!data) {
+    return;
+  }
+  if (Array.isArray(data.events)) {
+    state.nearbyEvents = data.events;
+    state.bootstrap.nearbyEvents = data.events;
+    renderNearbyEvents();
+  }
+  if (Array.isArray(data.inbox)) {
+    state.rsvpInbox = data.inbox;
+    state.bootstrap.rsvpInbox = data.inbox;
+    renderRsvpInbox();
+  }
+}
+
+function renderRsvpInbox() {
+  if (!elements.rsvpInboxList) {
+    return;
+  }
+  const list = state.rsvpInbox || [];
+  if (!list.length) {
+    elements.rsvpInboxList.innerHTML = '<p class="empty-state rsvp-inbox-empty">Nothing pending — you’ll see join requests here when you host.</p>';
+    return;
+  }
+
+  elements.rsvpInboxList.innerHTML = list
+    .map((r) => {
+      const late =
+        r.revealPolicy === "last2days"
+          ? '<span class="rsvp-reveal-pill" title="Guest asked to stay hidden until 2 days before start">Late reveal</span>'
+          : "";
+      return `
+        <div class="rsvp-inbox-row" data-request-id="${escapeHtml(r.id)}">
+          <div class="rsvp-inbox-text">
+            <strong>${escapeHtml(r.guestName)}</strong>
+            <span class="rsvp-inbox-event">${escapeHtml(r.eventTitle)}</span>
+            ${late}
+          </div>
+          <div class="rsvp-inbox-actions">
+            <button type="button" class="primary-button rsvp-accept-btn" data-request-id="${escapeHtml(r.id)}">Accept</button>
+            <button type="button" class="ghost-button rsvp-decline-btn" data-request-id="${escapeHtml(r.id)}">Decline</button>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  elements.rsvpInboxList.querySelectorAll(".rsvp-accept-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      try {
+        const data = await requestJson(`/api/rsvp/${btn.dataset.requestId}/respond`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accept: true })
+        });
+        mergeRsvpApiPayload(data);
+        showLiveToast("Accepted — they’re on the guest list.");
+        await refreshNeighborMatches();
+      } catch (e) {
+        console.error(e);
+        showLiveToast(e.message || "Could not accept");
+      }
+    });
+  });
+
+  elements.rsvpInboxList.querySelectorAll(".rsvp-decline-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      try {
+        const data = await requestJson(`/api/rsvp/${btn.dataset.requestId}/respond`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ accept: false })
+        });
+        mergeRsvpApiPayload(data);
+        showLiveToast("Declined.");
+      } catch (e) {
+        console.error(e);
+        showLiveToast(e.message || "Could not decline");
+      }
+    });
+  });
+}
+
 function renderNearbyEvents() {
   if (!elements.nearbyEventsList) {
     return;
@@ -284,48 +399,90 @@ function renderNearbyEvents() {
   elements.nearbyEventsList.innerHTML = state.nearbyEvents
     .map((ev) => {
       const on = ev.youAreInterested ? "on" : "";
-      const label = ev.youAreInterested ? "Saved" : "I'm in";
+      const interestLabel = ev.youAreInterested ? "Saved" : "Save";
       const titleEsc = escapeHtml(ev.title);
       const venueEsc = escapeHtml(ev.venueLabel);
-      const titleEnc = encodeURIComponent(ev.title || "");
-      const venueEnc = encodeURIComponent(ev.venueLabel || "");
-      return `
-        <div class="event-row" data-event-id="${escapeHtml(ev.id)}">
-          <div class="event-row-main">
-            <div>
-              <h5>${titleEsc}</h5>
-              <p>${venueEsc} · ${escapeHtml(formatEventStarts(ev.startsAt))}</p>
-              <p>${Number(ev.interestCount || 0)} interested nearby</p>
-            </div>
-            <button type="button" class="interest-btn ${on}" data-event-id="${escapeHtml(ev.id)}">${label}</button>
+      const idEsc = escapeHtml(ev.id);
+      const going = Number(ev.interestCount || 0);
+      let rsvpHtml = "";
+      if (ev.youAreHost) {
+        rsvpHtml = `<p class="event-rsvp-note">You’re hosting — use <strong>Inbox</strong> for requests.</p>`;
+      } else if (ev.yourRsvp === "accepted") {
+        rsvpHtml = `<p class="event-rsvp-note event-rsvp-note--ok">Host accepted your RSVP.</p>`;
+      } else if (ev.yourRsvp === "rejected") {
+        rsvpHtml = `<p class="event-rsvp-note">Host declined this time.</p>`;
+      } else if (ev.yourRsvp === "pending") {
+        rsvpHtml = `<p class="event-rsvp-note">Request sent — host will respond.</p>`;
+      } else {
+        rsvpHtml = `
+          <label class="event-pick-label">
+            <input type="checkbox" class="event-pick-cb" data-event-id="${idEsc}" />
+            <span>Ask host for a spot</span>
+          </label>
+          <div class="event-rsvp-form hidden" data-rsvp-panel="${idEsc}">
+            <label class="checkbox-inline event-hide-label">
+              <input type="checkbox" class="event-hide-until-cb" data-event-id="${idEsc}" />
+              Hide my name until 2 days before start
+            </label>
+            <button type="button" class="primary-button event-rsvp-send" data-event-id="${idEsc}">Send RSVP</button>
           </div>
-          <div class="event-feedback-row">
-            <span class="event-feedback-label">Useful for you?</span>
-            <button type="button" class="feedback-thumb" data-feedback="1" data-event-id="${escapeHtml(ev.id)}" data-venue-enc="${venueEnc}" data-title-enc="${titleEnc}" aria-label="Yes, useful">👍</button>
-            <button type="button" class="feedback-thumb" data-feedback="0" data-event-id="${escapeHtml(ev.id)}" data-venue-enc="${venueEnc}" data-title-enc="${titleEnc}" aria-label="Not useful">👎</button>
+        `;
+      }
+
+      return `
+        <div class="event-row event-row--compact" data-event-id="${idEsc}">
+          <div class="event-row-main">
+            <div class="event-row-text">
+              <h5>${titleEsc}</h5>
+              <p class="event-meta-line">${venueEsc} · ${escapeHtml(formatEventStarts(ev.startsAt))} · ${going} going</p>
+              ${rsvpHtml}
+            </div>
+            <button type="button" class="interest-btn interest-btn--small ${on}" data-event-id="${idEsc}">${interestLabel}</button>
           </div>
         </div>
       `;
     })
     .join("");
 
-  elements.nearbyEventsList.querySelectorAll(".feedback-thumb").forEach((btn) => {
+  elements.nearbyEventsList.querySelectorAll(".event-pick-cb").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const panel = elements.nearbyEventsList.querySelector(`[data-rsvp-panel="${cb.dataset.eventId}"]`);
+      if (panel) {
+        panel.classList.toggle("hidden", !cb.checked);
+      }
+    });
+  });
+
+  elements.nearbyEventsList.querySelectorAll(".event-rsvp-send").forEach((btn) => {
     btn.addEventListener("click", async () => {
-      const helpful = btn.dataset.feedback === "1";
+      const id = btn.dataset.eventId;
+      const pick = elements.nearbyEventsList.querySelector(`.event-pick-cb[data-event-id="${id}"]`);
+      if (!pick?.checked) {
+        showLiveToast("Check “Ask host for a spot” first.");
+        return;
+      }
+      const hideCb = elements.nearbyEventsList.querySelector(`.event-hide-until-cb[data-event-id="${id}"]`);
+      const revealPolicy = hideCb?.checked ? "last2days" : "always";
       try {
-        await postRecommendationFeedback({
-          helpful,
-          source: "event",
-          eventId: btn.dataset.eventId,
-          venueLabel: decodeURIComponent(btn.dataset.venueEnc || ""),
-          title: decodeURIComponent(btn.dataset.titleEnc || "")
+        const data = await requestJson(`/api/events/${id}/rsvp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ revealPolicy })
         });
-        showLiveToast(helpful ? "Thanks — we’ll rank similar events higher." : "Got it — we’ll show fewer like this.", {
-          durationMs: 5000
-        });
+        if (data.duplicate) {
+          showLiveToast("You already have a pending request for this event.");
+          mergeRsvpApiPayload(data);
+          return;
+        }
+        mergeRsvpApiPayload(data);
+        showLiveToast(
+          revealPolicy === "last2days"
+            ? "RSVP sent — host may not see your name until 2 days before."
+            : "RSVP sent — host can respond anytime."
+        );
       } catch (e) {
         console.error(e);
-        showLiveToast(e.message || "Feedback failed");
+        showLiveToast(e.message || "RSVP failed");
       }
     });
   });
@@ -348,6 +505,86 @@ function renderNearbyEvents() {
         showLiveToast(e.message || "Could not update interest");
       }
     });
+  });
+}
+
+function installConciergeChat() {
+  const thread = elements.conciergeThread;
+  const input = elements.conciergeInput;
+  const sendBtn = elements.conciergeSend;
+  const status = elements.conciergeStatus;
+  if (!thread || !input || !sendBtn) {
+    return;
+  }
+
+  const history = [];
+
+  function appendBubble(role, text) {
+    const div = document.createElement("div");
+    div.className = `concierge-bubble concierge-bubble--${role}`;
+    div.textContent = text;
+    thread.appendChild(div);
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  async function send() {
+    const text = input.value.trim();
+    if (!text) {
+      return;
+    }
+    input.value = "";
+    appendBubble("user", text);
+    history.push({ role: "user", content: text });
+    sendBtn.disabled = true;
+    if (status) {
+      status.hidden = false;
+      status.textContent = "Thinking…";
+    }
+    try {
+      const data = await requestJson("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history })
+      });
+      if (data.error === "missing_key") {
+        if (status) {
+          status.textContent = "Add OPENAI_API_KEY on the server to enable replies.";
+        }
+        appendBubble("assistant", "Demo mode: set OPENAI_API_KEY to get concierge replies.");
+        return;
+      }
+      if (data.error || !data.reply) {
+        if (status) {
+          status.textContent = data.error || "No reply";
+        }
+        appendBubble("assistant", "Could not get a reply — try again.");
+        return;
+      }
+      history.push({ role: "assistant", content: data.reply });
+      appendBubble("assistant", data.reply);
+      if (status) {
+        status.textContent = "";
+        status.hidden = true;
+      }
+    } catch (e) {
+      console.error(e);
+      if (status) {
+        status.textContent = e.message || "Request failed";
+      }
+      appendBubble("assistant", "Something went wrong — try again.");
+    } finally {
+      sendBtn.disabled = false;
+    }
+  }
+
+  sendBtn.addEventListener("click", () => {
+    void send();
+  });
+  input.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" && !ev.shiftKey) {
+      ev.preventDefault();
+      void send();
+    }
   });
 }
 
@@ -410,6 +647,458 @@ function renderQuickChoices() {
     .join("");
 }
 
+function formatShortTime(iso) {
+  if (!iso) {
+    return "";
+  }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return "";
+  }
+  return d.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+function isActivityFavorite(id) {
+  return (state.bootstrap?.viewer?.activityFavorites || []).some((f) => f.id === id);
+}
+
+function hidePinTooltip() {
+  const tt = elements.mapPinTooltip;
+  if (tt) {
+    tt.hidden = true;
+    tt.innerHTML = "";
+  }
+}
+
+function positionPinTooltip(anchorEl) {
+  const tt = elements.mapPinTooltip;
+  const shell = tt?.closest(".map-shell");
+  if (!tt || !shell || !anchorEl) {
+    return;
+  }
+  const shellRect = shell.getBoundingClientRect();
+  const r = anchorEl.getBoundingClientRect();
+  const tw = 300;
+  const left = Math.min(
+    Math.max(10, r.left - shellRect.left + r.width / 2 - tw / 2),
+    shellRect.width - tw - 10
+  );
+  const top = Math.min(r.bottom - shellRect.top + 10, shellRect.height - 120);
+  tt.style.width = `${tw}px`;
+  tt.style.left = `${left}px`;
+  tt.style.top = `${top}px`;
+}
+
+function buildErrandRowsHtml(contact) {
+  const errands = (contact.errands || []).slice(0, 6);
+  return errands
+    .map((log) => {
+      const fav = isActivityFavorite(log.id);
+      return `<li class="contact-errand-row">
+      <div class="contact-errand-main">
+        <span>${escapeHtml(log.label)}</span>
+        <span class="contact-errand-meta">${escapeHtml(formatShortTime(log.loggedAt))}</span>
+      </div>
+      <div class="contact-errand-actions">
+        <button type="button" class="ghost-button contact-fav-btn" data-log-id="${escapeAttr(log.id)}">${fav ? "Saved" : "Favorite"}</button>
+        <button type="button" class="ghost-button contact-repeat-btn" data-errand-key="${escapeAttr(
+          log.errandKey
+        )}" data-label="${escapeAttr(log.label)}">Repeat</button>
+      </div>
+    </li>`;
+    })
+    .join("");
+}
+
+function bindTooltipHoverLeave() {
+  const tt = elements.mapPinTooltip;
+  if (!tt) {
+    return;
+  }
+  tt.onmouseenter = () => {
+    if (state._pinTooltipHideTimer) {
+      clearTimeout(state._pinTooltipHideTimer);
+    }
+  };
+  tt.onmouseleave = () => {
+    state._pinTooltipHideTimer = setTimeout(() => hidePinTooltip(), 180);
+  };
+}
+
+function openPinTooltip(anchorEl, post) {
+  const tt = elements.mapPinTooltip;
+  if (!tt || !post) {
+    return;
+  }
+  const contact = state.neighborContactsById[post.creatorId];
+  if (!contact) {
+    return;
+  }
+  const fitLineRaw = contact.fitLine || "";
+  const fitLineHtml =
+    fitLineRaw && !(post.creatorId === state.bootstrap?.viewer?.id && fitLineRaw === "You")
+      ? `<p class="tt-fit">${escapeHtml(fitLineRaw)}</p>`
+      : "";
+  const ritual = contact.openRitual
+    ? `<p class="tt-ritual"><strong>Open ritual:</strong> ${escapeHtml(contact.openRitual.label)} @ ${escapeHtml(
+        contact.openRitual.localSpotName
+      )} · ${escapeHtml(contact.openRitual.startTimeLabel)}</p>`
+    : `<p class="tt-muted">No open ritual from them in seed right now.</p>`;
+  const routines = (contact.routineHints || []).length
+    ? `<p class="tt-routines"><strong>Often logs:</strong> ${contact.routineHints.map(escapeHtml).join(" · ")}</p>`
+    : "";
+  const fun = contact.funFact ? `<p class="tt-fun">${escapeHtml(contact.funFact)}</p>` : "";
+  const errandsBlock = (contact.errands || []).length
+    ? `<div class="tt-errands"><strong>Errands logged</strong><ul class="tt-errand-ul">${buildErrandRowsHtml(contact)}</ul></div>`
+    : `<p class="tt-muted">No demo errand history for them.</p>`;
+
+  tt.innerHTML = `
+    <div class="pin-tooltip-inner">
+      <div class="tt-head">
+        <img src="${escapeAttr(contact.avatarUrl)}" alt="" width="40" height="40" class="tt-avatar" />
+        <div>
+          <strong>${escapeHtml(contact.firstName)}</strong>
+          ${fitLineHtml}
+        </div>
+      </div>
+      ${fun}
+      ${ritual}
+      ${routines}
+      ${errandsBlock}
+    </div>
+  `;
+  tt.hidden = false;
+  positionPinTooltip(anchorEl);
+  bindTooltipHoverLeave();
+
+  tt.querySelectorAll(".contact-fav-btn").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const logId = btn.dataset.logId;
+      const log = (contact.errands || []).find((e) => e.id === logId);
+      if (log) {
+        toggleActivityFavoriteEntry({
+          id: log.id,
+          kind: "neighbor_errand",
+          sourceUserId: contact.userId,
+          label: log.label,
+          errandKey: log.errandKey
+        });
+      }
+    });
+  });
+  tt.querySelectorAll(".contact-repeat-btn").forEach((btn) => {
+    btn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      repeatErrandFromLog(btn.dataset.errandKey, btn.dataset.label);
+    });
+  });
+}
+
+async function toggleActivityFavoriteEntry(entry) {
+  const wasFav = isActivityFavorite(entry.id);
+  try {
+    const { viewer } = await requestJson("/api/viewer/activity-favorite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entry })
+    });
+    state.bootstrap.viewer = viewer;
+    renderMyFavorites();
+    renderBondsRow();
+    showLiveToast(wasFav ? "Removed from favorites." : "Saved to favorites.");
+  } catch (e) {
+    showLiveToast(e.message || "Could not update favorites");
+  }
+}
+
+function repeatErrandFromLog(errandKey, label) {
+  const preset = state.errandPresets.find((p) => p.errandKey === errandKey);
+  if (preset) {
+    state.selectedErrandPresetId = preset.id;
+    renderErrandPresets();
+  } else {
+    state.selectedErrandPresetId = null;
+    renderErrandPresets();
+  }
+  if (elements.errandCustomLabel) {
+    elements.errandCustomLabel.value = label || "";
+  }
+  document.getElementById("errands-card")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  showLiveToast("Quick errand prefilled — adjust window, then log.");
+}
+
+function renderMyActivity() {
+  const el = elements.myActivityBody;
+  if (!el) {
+    return;
+  }
+  const va = state.viewerActivity || { openPosts: [], errands: [] };
+  const posts = va.openPosts || [];
+  const errands = va.errands || [];
+  if (!posts.length && !errands.length) {
+    el.innerHTML =
+      '<p class="my-activity-empty">No open rituals yet — publish from the left. Logged errands appear here too.</p>';
+    return;
+  }
+  let html = "";
+  if (posts.length) {
+    html += '<p class="my-activity-sub">Your open rituals</p><ul class="my-activity-ul">';
+    for (const p of posts) {
+      html += `<li><strong>${escapeHtml(p.label)}</strong><span>${escapeHtml(p.localSpotName)} · ${escapeHtml(
+        p.startTimeLabel
+      )}</span></li>`;
+    }
+    html += "</ul>";
+  }
+  if (errands.length) {
+    html += '<p class="my-activity-sub">Your errands</p><ul class="my-activity-ul">';
+    for (const e of errands) {
+      const win = `${formatShortTime(e.windowStart)} – ${formatShortTime(e.windowEnd)}`;
+      html += `<li><strong>${escapeHtml(e.label)}</strong><span>${escapeHtml(e.errandKey)} · ${escapeHtml(
+        win
+      )}</span></li>`;
+    }
+    html += "</ul>";
+  }
+  el.innerHTML = html;
+}
+
+function renderMyFavorites() {
+  const favs = state.bootstrap?.viewer?.activityFavorites || [];
+  const block = elements.myFavoritesBlock;
+  const list = elements.myFavoritesList;
+  if (!block || !list) {
+    return;
+  }
+  if (!favs.length) {
+    block.hidden = true;
+    list.innerHTML = "";
+    return;
+  }
+  block.hidden = false;
+  list.innerHTML = favs
+    .map(
+      (f) => `
+    <div class="fav-row">
+      <span class="fav-row-label">${escapeHtml(f.label)}</span>
+      <div class="fav-row-actions">
+        <button type="button" class="ghost-button fav-repeat-btn" data-fav-id="${escapeAttr(f.id)}">Repeat</button>
+        <button type="button" class="ghost-button fav-remove-btn" data-fav-id="${escapeAttr(f.id)}">Remove</button>
+      </div>
+    </div>`
+    )
+    .join("");
+  list.querySelectorAll(".fav-repeat-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const f = favs.find((x) => x.id === btn.dataset.favId);
+      if (f) {
+        repeatErrandFromLog(f.errandKey, f.label);
+      }
+    });
+  });
+  list.querySelectorAll(".fav-remove-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const f = favs.find((x) => x.id === btn.dataset.favId);
+      if (f) {
+        await toggleActivityFavoriteEntry({
+          id: f.id,
+          kind: f.kind || "neighbor_errand",
+          sourceUserId: f.sourceUserId,
+          label: f.label,
+          errandKey: f.errandKey
+        });
+      }
+    });
+  });
+}
+
+function syncViewerContactOpenRitual() {
+  const vid = state.bootstrap?.viewer?.id;
+  const root = state.neighborContactsById;
+  if (!vid || !root || !root[vid]) {
+    return;
+  }
+  const mine = state.posts.filter((p) => p.creatorId === vid);
+  const first = mine[0];
+  root[vid].openRitual = first
+    ? {
+        label: first.label,
+        localSpotName: first.localSpotName,
+        startTimeLabel: first.startTimeLabel
+      }
+    : null;
+}
+
+async function focusNeighborOnMap(neighborId) {
+  if (!state.map) {
+    showLiveToast("Map is still loading — try again in a moment.");
+    return;
+  }
+  await loadPosts();
+  const post = state.posts.find((p) => p.creatorId === neighborId);
+  if (post) {
+    await loadDetail(post.id);
+    document.querySelector("#map-nearby-posts-block")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    showLiveToast(`Focused ${post.creatorName}'s pin.`);
+    return;
+  }
+  showLiveToast("Not in this map frame — zoom out or check back when they post.");
+}
+
+function renderBondsRow() {
+  if (!elements.bondsRow) {
+    return;
+  }
+  const bonds = state.ritualBonds || [];
+  if (elements.bondsEmpty) {
+    elements.bondsEmpty.hidden = bonds.length > 0;
+  }
+  if (!bonds.length) {
+    elements.bondsRow.innerHTML = "";
+    return;
+  }
+  elements.bondsRow.innerHTML = bonds
+    .map((b) => {
+      const contact = state.neighborContactsById[b.neighborId] || {};
+      const fit = escapeHtml(contact.fitLine || "");
+      const errandsHtml =
+        (contact.errands || []).length > 0
+          ? `<ul class="bond-errand-ul">${buildErrandRowsHtml(contact)}</ul>`
+          : `<p class="bond-no-errands">No demo errands on file.</p>`;
+      const ritual = contact.openRitual
+        ? `<p class="bond-open-ritual"><strong>Open:</strong> ${escapeHtml(contact.openRitual.label)} @ ${escapeHtml(
+            contact.openRitual.localSpotName
+          )}</p>`
+        : "";
+      return `
+    <div class="bond-tile bond-tile--contact" role="listitem" data-neighbor-id="${escapeHtml(b.neighborId)}">
+      <img class="bond-tile-avatar" src="${escapeAttr(b.avatarUrl)}" alt="" width="44" height="44" loading="lazy" />
+      <div class="bond-tile-body">
+        <strong>${escapeHtml(b.firstName)}</strong>
+        <p class="bond-tile-fit">${fit}</p>
+        <span class="bond-tile-meta">${b.timesTogether}× together · last: ${escapeHtml(b.lastSharedLabel)}</span>
+        ${b.funFact ? `<span class="bond-tile-fact">${escapeHtml(b.funFact)}</span>` : ""}
+        ${ritual}
+        <p class="bond-errands-label">Their logged errands</p>
+        ${errandsHtml}
+        <button type="button" class="ghost-button bond-focus-btn" data-neighbor-id="${escapeHtml(b.neighborId)}">Show on map</button>
+      </div>
+    </div>`;
+    })
+    .join("");
+  elements.bondsRow.querySelectorAll(".bond-focus-btn").forEach((btn) => {
+    btn.addEventListener("click", () => focusNeighborOnMap(btn.dataset.neighborId));
+  });
+  elements.bondsRow.querySelectorAll(".bond-tile--contact").forEach((tile) => {
+    const nid = tile.dataset.neighborId;
+    const contact = state.neighborContactsById[nid];
+    if (!contact) {
+      return;
+    }
+    tile.querySelectorAll(".contact-fav-btn").forEach((btn) => {
+      btn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        const logId = btn.dataset.logId;
+        const log = (contact.errands || []).find((e) => e.id === logId);
+        if (log) {
+          toggleActivityFavoriteEntry({
+            id: log.id,
+            kind: "neighbor_errand",
+            sourceUserId: contact.userId,
+            label: log.label,
+            errandKey: log.errandKey
+          });
+        }
+      });
+    });
+    tile.querySelectorAll(".contact-repeat-btn").forEach((btn) => {
+      btn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        repeatErrandFromLog(btn.dataset.errandKey, btn.dataset.label);
+      });
+    });
+  });
+}
+
+function applyRepeatTemplate(tpl) {
+  if (!tpl || !elements.composerForm) {
+    return;
+  }
+  const f = elements.composerForm.elements;
+  f.label.value = tpl.label || "";
+  if (elements.routineTypeSelect && tpl.type) {
+    elements.routineTypeSelect.value = tpl.type;
+  }
+  f.localSpotName.value = tpl.localSpotName || "";
+  f.desiredGroupSize.value = String(tpl.desiredGroupSize ?? 2);
+  f.cadencePerWeek.value = String(tpl.cadencePerWeek ?? 2);
+  f.durationMinutes.value = String(tpl.durationMinutes ?? 40);
+  f.contextTags.value = Array.isArray(tpl.contextTags) ? tpl.contextTags.join(", ") : "";
+  if (tpl.errandPresetId) {
+    const presetExists = state.errandPresets.some((p) => p.id === tpl.errandPresetId);
+    if (presetExists) {
+      state.selectedErrandPresetId = tpl.errandPresetId;
+      renderErrandPresets();
+    }
+  }
+  document.querySelector(".composer-card")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  showLiveToast("Composer prefilled — tweak time, then publish.");
+}
+
+function renderRepeatTemplateChips() {
+  if (!elements.repeatTemplateChips) {
+    return;
+  }
+  const templates = state.repeatTemplates || [];
+  elements.repeatTemplateChips.innerHTML = templates
+    .map(
+      (t) => `
+    <button type="button" class="repeat-template-chip repeat-template-chip--compact" data-template-id="${escapeHtml(
+      t.id
+    )}" title="${escapeHtml([t.label, t.buddyLine].filter(Boolean).join(" — "))}">
+      <span class="repeat-chip-title">${escapeHtml(t.label)}</span>
+    </button>`
+    )
+    .join("");
+  elements.repeatTemplateChips.querySelectorAll(".repeat-template-chip").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.templateId;
+      const tpl = templates.find((x) => x.id === id);
+      applyRepeatTemplate(tpl);
+    });
+  });
+}
+
+function startFunFactRotator() {
+  const facts = state.workspaceFunFacts || [];
+  if (!elements.funFactRotator || !facts.length) {
+    return;
+  }
+  let i = 0;
+  elements.funFactRotator.textContent = facts[0];
+  if (state._funFactTimer) {
+    clearInterval(state._funFactTimer);
+  }
+  if (facts.length < 2) {
+    return;
+  }
+  state._funFactTimer = setInterval(() => {
+    i = (i + 1) % facts.length;
+    elements.funFactRotator.textContent = facts[i];
+  }, 12000);
+}
+
+function installTrustRepeatPanel() {
+  renderMyActivity();
+  renderMyFavorites();
+  renderBondsRow();
+  renderRepeatTemplateChips();
+  startFunFactRotator();
+}
+
 function renderErrandPresets() {
   if (!elements.errandPresetRow) {
     return;
@@ -432,11 +1121,26 @@ function renderErrandPresets() {
   });
 }
 
+function patchContactsFromMatches(matches) {
+  const root = state.neighborContactsById;
+  if (!root || !matches) {
+    return;
+  }
+  for (const m of matches) {
+    const c = root[m.neighborId];
+    if (c && typeof m.percent === "number") {
+      c.fitPercent = m.percent;
+      c.fitLine = `${m.percent}% fit with your profile`;
+    }
+  }
+}
+
 async function refreshNeighborMatches(options = {}) {
   try {
     const { matches, highlight } = await requestJson("/api/neighbor-matches");
     state.neighborMatches = matches || [];
     state.matchHighlight = highlight || null;
+    patchContactsFromMatches(matches);
     renderMapMarkers();
     if (options.fromEventInterest) {
       showLiveToast("Fit scores on the map just updated.");
@@ -540,6 +1244,11 @@ function installSignalsAndErrands() {
       } else {
         showLiveToast(`Errand logged: ${result.errand?.label || "done"}.`);
       }
+      if (result.viewerActivity) {
+        state.viewerActivity = result.viewerActivity;
+        state.bootstrap.viewerActivity = result.viewerActivity;
+        renderMyActivity();
+      }
       await refreshNeighborMatches();
     } catch (e) {
       console.error(e);
@@ -611,18 +1320,26 @@ function postCardMarkup(post) {
     .slice(0, 3)
     .map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`)
     .join("");
-  const origin =
-    post.creatorOriginNote && post.creatorId !== state.bootstrap?.viewer?.id
-      ? `<p class="post-card-origin">${escapeHtml(post.creatorOriginNote)}</p>`
+  const isViewer = post.creatorId === state.bootstrap?.viewer?.id;
+  const avatarSrc = post.creatorAvatarUrl || "";
+  const bondLine =
+    post.bondBlurb && !isViewer
+      ? `<p class="post-card-bond-line">${escapeHtml(post.bondBlurb)}</p>`
       : "";
+  const avatarBlock = isViewer
+    ? `<div class="post-card-avatar post-card-avatar--you post-card-avatar--sm" aria-hidden="true">You</div>`
+    : `<img class="post-card-avatar post-card-avatar--sm" src="${escapeAttr(avatarSrc)}" alt="" width="40" height="40" loading="lazy" />`;
   return `
-    <article class="post-card post-card--strip ${selected}" data-post-id="${post.id}" role="listitem">
-      <div class="post-meta">
-        <p class="eyebrow">${escapeHtml(post.creatorName)} · ${escapeHtml(post.startTimeLabel)}</p>
-        ${origin}
-        <h5>${escapeHtml(post.label)}</h5>
-        <p>${escapeHtml(post.localSpotName)} · ${escapeHtml(formatDistance(post.distanceMiles))}</p>
-        <div class="tag-row">${tags}</div>
+    <article class="post-card post-card--strip post-card--compact ${selected}" data-post-id="${post.id}" role="listitem">
+      <div class="post-card-row">
+        ${avatarBlock}
+        <div class="post-meta">
+          <p class="post-card-kicker">${escapeHtml(post.creatorName)} · ${escapeHtml(post.startTimeLabel)}</p>
+          ${bondLine}
+          <h5>${escapeHtml(post.label)}</h5>
+          <p class="post-card-where">${escapeHtml(post.localSpotName)} · ${escapeHtml(formatDistance(post.distanceMiles))}</p>
+          <div class="tag-row">${tags}</div>
+        </div>
       </div>
     </article>
   `;
@@ -665,15 +1382,27 @@ function markerElementForPost(post) {
   marker.className = `mapbox-post-marker${post.id === state.selectedPostId ? " selected" : ""}${
     isViewer ? " is-viewer" : ""
   }`;
-  const fit = matchPercentForCreator(post.creatorId);
-  const fitBlock =
-    !isViewer && fit != null
-      ? `<span class="marker-fit-badge" aria-label="Your fit ${fit} percent">${fit}%</span>`
-      : "";
-  marker.innerHTML = `<span class="marker-pin-inner"><span class="marker-name">${isViewer ? "You" : post.creatorName}</span>${fitBlock}</span>`;
+  marker.setAttribute(
+    "aria-label",
+    `${isViewer ? "Your" : post.creatorName}'s ritual pin — hover for details`
+  );
+  const face = !isViewer
+    ? `<img class="marker-avatar" src="${escapeAttr(post.creatorAvatarUrl || "")}" alt="" width="34" height="34" />`
+    : `<span class="marker-avatar marker-avatar--you" aria-hidden="true">Y</span>`;
+  marker.innerHTML = `<span class="marker-pin-inner">${face}<span class="marker-name">${isViewer ? "You" : post.creatorName}</span></span>`;
   marker.addEventListener("click", async (event) => {
     event.stopPropagation();
+    hidePinTooltip();
     await loadDetail(post.id);
+  });
+  marker.addEventListener("mouseenter", () => {
+    if (state._pinTooltipHideTimer) {
+      clearTimeout(state._pinTooltipHideTimer);
+    }
+    openPinTooltip(marker, post);
+  });
+  marker.addEventListener("mouseleave", () => {
+    state._pinTooltipHideTimer = setTimeout(() => hidePinTooltip(), 200);
   });
   return marker;
 }
@@ -729,6 +1458,7 @@ async function loadPosts() {
 
   renderPostList();
   updateViewportLabels();
+  syncViewerContactOpenRitual();
   renderMapMarkers();
 }
 
@@ -870,6 +1600,10 @@ function installMapboxMap() {
     scheduleLoadPosts();
   });
 
+  state.map.on("movestart", () => {
+    hidePinTooltip();
+  });
+
   state.map.on("error", (event) => {
     console.error("Mapbox error:", event?.error || event);
   });
@@ -934,8 +1668,14 @@ function installComposer() {
       });
     }
 
+    if (created.viewerActivity) {
+      state.viewerActivity = created.viewerActivity;
+      state.bootstrap.viewerActivity = created.viewerActivity;
+      renderMyActivity();
+    }
+
     await loadPosts();
-    document.querySelector("#map-posts-section")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    document.querySelector("#map-nearby-posts-block")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
 }
 
@@ -966,15 +1706,24 @@ async function initialize() {
   state.composerDefaults = state.bootstrap.composerDefaults || {};
   state.heatZones = state.bootstrap.heatZones || [];
   state.nearbyEvents = state.bootstrap.nearbyEvents || [];
+  state.ritualBonds = state.bootstrap.ritualBonds || [];
+  state.repeatTemplates = state.bootstrap.repeatTemplates || [];
+  state.workspaceFunFacts = state.bootstrap.workspaceFunFacts || [];
   state.errandPresets = state.bootstrap.errandPresets || [];
   state.hobbyOptions = state.bootstrap.hobbyOptions || [];
   state.quickChoices = state.bootstrap.quickChoices || [];
+  state.neighborContactsById = state.bootstrap.neighborContactsById || {};
+  state.viewerActivity = state.bootstrap.viewerActivity || { openPosts: [], errands: [] };
+  state.rsvpInbox = state.bootstrap.rsvpInbox || [];
 
   elements.workspaceTitle.textContent =
     state.bootstrap.brand?.promise || "Browse routines around you and post your own anchor.";
 
   installComposer();
+  installTrustRepeatPanel();
+  renderRsvpInbox();
   renderNearbyEvents();
+  installConciergeChat();
   installSignalsAndErrands();
   installSpotlight();
   installLiveStream();

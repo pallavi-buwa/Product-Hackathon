@@ -165,6 +165,23 @@ export function createServer({ port = 3030 } = {}) {
         return sendJson(response, 201, result);
       }
 
+      if (request.method === "GET" && pathname === "/api/viewer/activity") {
+        await app.ensureReady();
+        return sendJson(response, 200, {
+          viewerActivity: app.getViewerActivity(),
+          viewer: app.getProfile(app.state.viewerId)
+        });
+      }
+
+      if (request.method === "POST" && pathname === "/api/viewer/activity-favorite") {
+        const payload = await readJsonBody(request);
+        const viewer = await app.toggleActivityFavorite(payload);
+        if (!viewer) {
+          return sendJson(response, 400, { error: "Could not update favorites" });
+        }
+        return sendJson(response, 200, { viewer });
+      }
+
       if (request.method === "POST" && pathname === "/api/viewer/recommendation-feedback") {
         const payload = await readJsonBody(request);
         const viewer = await app.submitRecommendationFeedback(payload);
@@ -181,6 +198,34 @@ export function createServer({ port = 3030 } = {}) {
           return sendNotFound(response);
         }
         return sendJson(response, 200, { events });
+      }
+
+      const eventRsvpMatch = pathname.match(/^\/api\/events\/([^/]+)\/rsvp$/);
+      if (request.method === "POST" && eventRsvpMatch) {
+        const payload = await readJsonBody(request);
+        const result = await app.requestEventRsvp(eventRsvpMatch[1], {
+          revealPolicy: payload?.revealPolicy
+        });
+        if (!result) {
+          return sendNotFound(response);
+        }
+        return sendJson(response, 200, result);
+      }
+
+      const rsvpRespondMatch = pathname.match(/^\/api\/rsvp\/([^/]+)\/respond$/);
+      if (request.method === "POST" && rsvpRespondMatch) {
+        const payload = await readJsonBody(request);
+        const result = await app.respondToRsvp(rsvpRespondMatch[1], Boolean(payload?.accept));
+        if (!result) {
+          return sendJson(response, 400, { error: "Could not update RSVP" });
+        }
+        return sendJson(response, 200, result);
+      }
+
+      if (request.method === "POST" && pathname === "/api/chat") {
+        const payload = await readJsonBody(request);
+        const out = await app.lodgeChat(payload?.messages || []);
+        return sendJson(response, 200, out);
       }
 
       // Social Opportunity Map — cross-analyze full weekly routine
