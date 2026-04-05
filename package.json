@@ -1,0 +1,7 @@
+{
+  "name": "product-hackathon",
+  "private": true,
+  "scripts": {
+    "start": "npm start --prefix build-mode"
+  }
+}

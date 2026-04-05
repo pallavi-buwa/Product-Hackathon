@@ -3,6 +3,9 @@ import { getRoutineAnchorPoints, haversineMiles } from "./geo.js";
 /**
  * Aggregated social heat at public anchors — counts distinct people
  * (routines + open intentions + tag-along errands) near each place.
+ *
+ * Consumed by DemoBuildModeApp.getHeatZones() → bootstrap JSON → ui/build.js
+ * Mapbox layer id: "social-heat" (fill extrusion on GeoJSON from heat-zones source).
  */
 export function computeHeatZones({
   mapPlaces = [],

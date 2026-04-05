@@ -18,6 +18,29 @@ function isoMinutesFrom(baseDate, minutes) {
 }
 
 function materializeSeed(seed, now = new Date()) {
+  const nearbyEvents = (seed.nearbyEvents || []).map((item) => ({
+    ...cloneJson(item),
+    startsAt: item.startsAt || isoMinutesFrom(now, Number(item.startsOffsetMinutes ?? 300)),
+    startsOffsetMinutes: undefined
+  }));
+  const startsByEventId = Object.fromEntries(nearbyEvents.map((e) => [e.id, e.startsAt]));
+
+  const eventRsvpRequests = (seed.eventRsvpRequests || []).map((item) => {
+    const row = cloneJson(item);
+    const offs = Number(row.createdOffsetMinutes);
+    row.createdAt =
+      row.createdAt || (Number.isFinite(offs) ? isoMinutesFrom(now, offs) : now.toISOString());
+    delete row.createdOffsetMinutes;
+    const startsAt = startsByEventId[row.eventId];
+    const ts = startsAt ? new Date(startsAt).getTime() : now.getTime();
+    const twoDays = 2 * 24 * 60 * 60 * 1000;
+    row.visibleToHostAfter =
+      row.revealPolicy === "last2days" ? new Date(ts - twoDays).toISOString() : row.createdAt;
+    row.status = row.status || "pending";
+    row.revealPolicy = row.revealPolicy === "last2days" ? "last2days" : "always";
+    return row;
+  });
+
   return {
     brand: cloneJson(seed.brand || {}),
     globeSignals: cloneJson(seed.globeSignals || []),
@@ -44,16 +67,60 @@ function materializeSeed(seed, now = new Date()) {
       timestamp: item.timestamp || isoMinutesFrom(now, Number(item.offsetMinutes || 0))
     })),
     errandPresets: cloneJson(seed.errandPresets || []),
-    nearbyEvents: (seed.nearbyEvents || []).map((item) => ({
-      ...cloneJson(item),
-      startsAt: item.startsAt || isoMinutesFrom(now, Number(item.startsOffsetMinutes ?? 300)),
-      startsOffsetMinutes: undefined
-    })),
+    nearbyEvents,
     hobbyOptions: cloneJson(seed.hobbyOptions || []),
     quickChoices: cloneJson(seed.quickChoices || []),
     pillarGuide: cloneJson(seed.pillarGuide || {}),
-    viewerErrands: [],
-    eventInterests: []
+    viewerErrands: (seed.viewerErrands || []).map((item) => {
+      const row = cloneJson(item);
+      const startOff = Number(row.windowStartOffsetMinutes);
+      const endOff = Number(row.windowEndOffsetMinutes);
+      if (!row.windowStart && Number.isFinite(startOff)) {
+        row.windowStart = isoMinutesFrom(now, startOff);
+      }
+      if (!row.windowEnd && Number.isFinite(endOff)) {
+        row.windowEnd = isoMinutesFrom(now, endOff);
+      }
+      delete row.windowStartOffsetMinutes;
+      delete row.windowEndOffsetMinutes;
+      return {
+        id: row.id || randomUUID(),
+        userId: row.userId || seed.viewerId || "viewer",
+        label: row.label || "Errand",
+        errandKey: row.errandKey || "custom",
+        lat: Number(row.lat),
+        lng: Number(row.lng),
+        openToTagAlong: Boolean(row.openToTagAlong),
+        windowStart: row.windowStart || isoMinutesFrom(now, -10),
+        windowEnd: row.windowEnd || isoMinutesFrom(now, 35),
+        createdAt: row.createdAt || now.toISOString()
+      };
+    }),
+    eventInterests: cloneJson(seed.eventInterests || []),
+    ritualBonds: (seed.ritualBonds || []).map((item) => {
+      const row = cloneJson(item);
+      const days = Number(row.lastSharedAtOffsetDays);
+      if (!row.lastSharedAt && Number.isFinite(days)) {
+        row.lastSharedAt = isoMinutesFrom(now, -days * 24 * 60);
+      }
+      if (!row.lastSharedAt) {
+        row.lastSharedAt = isoMinutesFrom(now, -4 * 24 * 60);
+      }
+      delete row.lastSharedAtOffsetDays;
+      return row;
+    }),
+    repeatTemplates: cloneJson(seed.repeatTemplates || []),
+    workspaceFunFacts: cloneJson(seed.workspaceFunFacts || []),
+    neighborErrandLogs: (seed.neighborErrandLogs || []).map((item) => {
+      const row = cloneJson(item);
+      const hours = Number(row.offsetHours);
+      row.loggedAt =
+        row.loggedAt ||
+        (Number.isFinite(hours) ? isoMinutesFrom(now, -hours * 60) : isoMinutesFrom(now, -12 * 60));
+      delete row.offsetHours;
+      return row;
+    }),
+    eventRsvpRequests
   };
 }
 
@@ -77,7 +144,12 @@ function sanitizeState(state) {
     quickChoices: cloneJson(state.quickChoices || []),
     pillarGuide: cloneJson(state.pillarGuide || {}),
     viewerErrands: cloneJson(state.viewerErrands || []),
-    eventInterests: cloneJson(state.eventInterests || [])
+    eventInterests: cloneJson(state.eventInterests || []),
+    ritualBonds: cloneJson(state.ritualBonds || []),
+    repeatTemplates: cloneJson(state.repeatTemplates || []),
+    workspaceFunFacts: cloneJson(state.workspaceFunFacts || []),
+    neighborErrandLogs: cloneJson(state.neighborErrandLogs || []),
+    eventRsvpRequests: cloneJson(state.eventRsvpRequests || [])
   };
 }
 
@@ -92,7 +164,9 @@ function mergeNearbyEvents(seedEvents, runtimeEvents) {
     const rt = rtById[e.id];
     return {
       ...cloneJson(e),
-      interestedUserIds: rt?.interestedUserIds ?? e.interestedUserIds ?? []
+      interestedUserIds: rt?.interestedUserIds ?? e.interestedUserIds ?? [],
+      hostId: rt?.hostId ?? e.hostId,
+      startsAt: rt?.startsAt ?? e.startsAt
     };
   });
 }
@@ -127,8 +201,26 @@ export class BuildModeDataStore {
       pillarGuide: Object.keys(seed.pillarGuide || {}).length ? seed.pillarGuide : rt.pillarGuide,
       nearbyEvents: mergeNearbyEvents(seed.nearbyEvents, rt.nearbyEvents),
       userProfiles: mergeUserProfiles(seed.userProfiles, rt.userProfiles),
-      viewerErrands: rt.viewerErrands || [],
-      eventInterests: rt.eventInterests || []
+      viewerErrands:
+        rt.viewerErrands !== undefined && rt.viewerErrands !== null
+          ? rt.viewerErrands
+          : seed.viewerErrands,
+      eventInterests:
+        rt.eventInterests !== undefined && rt.eventInterests !== null
+          ? rt.eventInterests
+          : seed.eventInterests,
+      ritualBonds:
+        Array.isArray(rt.ritualBonds) && rt.ritualBonds.length > 0 ? rt.ritualBonds : seed.ritualBonds,
+      repeatTemplates: seed.repeatTemplates?.length ? seed.repeatTemplates : rt.repeatTemplates || [],
+      workspaceFunFacts: seed.workspaceFunFacts?.length ? seed.workspaceFunFacts : rt.workspaceFunFacts || [],
+      neighborErrandLogs:
+        Array.isArray(rt.neighborErrandLogs) && rt.neighborErrandLogs.length > 0
+          ? rt.neighborErrandLogs
+          : seed.neighborErrandLogs,
+      eventRsvpRequests:
+        Array.isArray(rt.eventRsvpRequests) && rt.eventRsvpRequests.length > 0
+          ? rt.eventRsvpRequests
+          : seed.eventRsvpRequests
     };
   }
 

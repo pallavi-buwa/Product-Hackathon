@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { analyzeRoutineEntropy } from "./entropy.js";
 import { computeCompatibilityFriction } from "./compatibility.js";
+import { computeCompatibilityOfMoment } from "./opportunityMoment.js";
 import {
   computeSpatialAnchorScore,
   getIntentionAnchorPoints,
@@ -193,9 +194,25 @@ function mergeCandidate(existing, incoming) {
 
 function buildMatchRecord({
   activeIntention,
+  posterProfile,
   candidate,
   invitationText
 }) {
+  const entropy = candidate.explanation?.entropy || {
+    entropyTriggerActive: false,
+    declineRate: 0
+  };
+
+  const compatibilityOfMoment = computeCompatibilityOfMoment({
+    activeIntention,
+    posterProfile,
+    recipientProfile: candidate.recipientProfile,
+    recipientRoutine: candidate.routine,
+    activityAffinityScore: candidate.activityAffinityScore,
+    anchorScore: candidate.anchorScore,
+    entropy
+  });
+
   return {
     id: randomUUID(),
     intentionId: activeIntention.id,
@@ -217,7 +234,8 @@ function buildMatchRecord({
     totalScore: candidate.totalScore,
     silentBridgeEligible: candidate.silentBridgeEligible,
     estimatedTravelMinutes: candidate.estimatedTravelMinutes,
-    explanation: candidate.explanation
+    explanation: candidate.explanation,
+    compatibilityOfMoment
   };
 }
 
@@ -422,6 +440,7 @@ export async function createRoutineMatches({
 
       return buildMatchRecord({
         activeIntention,
+        posterProfile,
         candidate,
         invitationText
       });

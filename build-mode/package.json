@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node --env-file=.env ./src/server.js",
     "demo": "node ./src/example.js",
-    "test": "node ./tests/routineMatchmaker.test.js"
+    "test": "node --test ./tests/*.test.js"
   }
 }
 

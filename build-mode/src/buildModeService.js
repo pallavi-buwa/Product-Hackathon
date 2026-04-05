@@ -1,12 +1,13 @@
 import { createAnchorLink } from "./anchorLink.js";
 import { createRoutineMatches } from "./routineMatchmaker.js";
-import { createSilentBridgeNotifications } from "./silentBridge.js";
+import { buildSilentBridgeMessage, createSilentBridgeNotifications } from "./silentBridge.js";
 
 export async function createBuildModePlan({
   activeIntention,
   repository,
   invitationSynthesizer,
   blueprintGenerator,
+  silentBridgeMessageBuilder = buildSilentBridgeMessage,
   baseUrl = "https://lodge.example.com"
 }) {
   const posterProfile = await repository.getUserProfile(activeIntention.creatorId);
@@ -31,10 +32,11 @@ export async function createBuildModePlan({
     intentionId: activeIntention.id,
     slug: "build"
   });
-  const notifications = createSilentBridgeNotifications({
+  const notifications = await createSilentBridgeNotifications({
     activeIntention,
     posterProfile,
-    rankedMatches: matches
+    rankedMatches: matches,
+    buildMessage: silentBridgeMessageBuilder
   });
 
   if (typeof repository.saveBlueprint === "function") {

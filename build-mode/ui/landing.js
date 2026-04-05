@@ -1,8 +1,7 @@
-const MAPBOX_TOKEN = window.__MAPBOX_TOKEN || "";
-
 const state = {
   bootstrap: null,
   liveFeed: { stats: {}, updates: [] },
+  livingMap: { generationMode: "template" },
   globeMap: null
 };
 
@@ -28,6 +27,27 @@ function renderBrandCopy() {
     brand.heroTitle || brand.promise || "Let everyday routines feel a little less solitary.";
   elements.heroText.textContent =
     brand.heroText || "Lodge helps you share the quiet parts of everyday life.";
+}
+
+function renderHeroMetrics() {
+  const stats = state.liveFeed.stats || {};
+  const aiOn = state.livingMap?.generationMode === "openai";
+  const chips = [
+    { label: "Open posts", value: stats.openPosts ?? 0 },
+    { label: "Routine neighbors", value: stats.activeNeighbors ?? 0 },
+    { label: "Timely nudges", value: stats.liveNudges ?? 0 },
+    {
+      label: aiOn ? " OpenAI copy" : " Template copy",
+      value: aiOn ? "On" : "Off",
+      subtle: true
+    }
+  ];
+  elements.heroMetrics.innerHTML = chips
+    .map((item) => {
+      const cls = item.subtle ? "metric-chip metric-chip-subtle" : "metric-chip";
+      return `<div class="${cls}"><strong>${item.value}</strong>${item.label}</div>`;
+    })
+    .join("");
 }
 
 function globeGeoJson() {
@@ -126,12 +146,45 @@ function installGlobeMarkers() {
   });
 }
 
+function mapboxToken() {
+  return String(window.__MAPBOX_TOKEN || "").trim();
+}
+
+function renderGlobeUnavailable(message) {
+  const box = elements.globeMap;
+  if (!box) {
+    return;
+  }
+  const fileProto = window.location.protocol === "file:";
+  box.innerHTML = `
+    <div class="map-unavailable globe-unavailable" role="alert">
+      <strong>Globe not loading</strong>
+      <p class="map-unavailable-lead">${message}</p>
+      <ul class="map-unavailable-list">
+        <li>Add a <code>pk.</code> Mapbox token via <code>MAPBOX_TOKEN</code> in <code>build-mode/.env</code> or export it before <code>npm start</code>.</li>
+        <li>Open the site at <strong>http://localhost:3030/</strong> from the server
+          ${fileProto ? "(not <code>file://</code>)." : "."}</li>
+      </ul>
+    </div>
+  `;
+}
+
 function installGlobe() {
-  if (!MAPBOX_TOKEN || !MAPBOX_TOKEN.startsWith("pk.") || typeof mapboxgl === "undefined") {
+  const token = mapboxToken();
+  if (!token) {
+    renderGlobeUnavailable("No Mapbox token (empty).");
+    return;
+  }
+  if (!token.startsWith("pk.")) {
+    renderGlobeUnavailable("Token must start with pk. (Mapbox public token).");
+    return;
+  }
+  if (typeof mapboxgl === "undefined") {
+    renderGlobeUnavailable("Mapbox GL JS failed to load.");
     return;
   }
 
-  mapboxgl.accessToken = MAPBOX_TOKEN;
+  mapboxgl.accessToken = token;
   state.globeMap = new mapboxgl.Map({
     container: elements.globeMap,
     style: "mapbox://styles/mapbox/satellite-v9",
@@ -166,6 +219,7 @@ function installGlobe() {
 async function initialize() {
   state.bootstrap = await requestJson("/api/bootstrap");
   state.liveFeed = state.bootstrap.liveFeed;
+  state.livingMap = state.bootstrap.livingMap || state.livingMap;
   renderBrandCopy();
   installGlobe();
 }
